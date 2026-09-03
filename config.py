@@ -56,110 +56,253 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL = "openai/gpt-4o-mini"
 DEFAULT_TEMPERATURE = 0
 
-# --- tool layer descriptors ---------------------------------------------
-# name / args / returns / when_to_use are rendered into the system prompt.
-# guardrail and cost are documentation fields for D2b and are not rendered.
+# --- tool layer descriptors (D2b) ----------------------------------------
+# The six fields the brief fixes, no exceptions:
+#
+#   NAME + SIGNATURE   the full typed signature
+#   WHAT               one line: what this answers that nothing else answers
+#   INPUT              each argument, its type, and what a bad value does
+#   RETURNS            the shape, and a SIZE BOUND
+#   FAILS WHEN         the named conditions under which it returns nothing
+#   IRREVERSIBLE?      yes / no. If yes, name the gate that covers it
+#
+# `what` and `poka_yoke` are left empty on purpose. Both are design
+# judgements - what a tool uniquely answers, and which two error classes the
+# interface makes impossible - and they belong to whoever owns D2(a)/D2(b),
+# not to whoever typed the function bodies. Everything else here is read off
+# the implementation and is fact.
+#
+# Size bounds are measured, not estimated: every tool was called over every
+# valid input in data_A/ and the longest observation recorded. Token figures
+# are chars/4. Re-measure after any change to a return string.
+#
+# `prompt_guidance` is NOT one of the six. It is the procedural line that goes
+# into the system prompt telling the model when to reach for this tool. The
+# prompt renders signature + what + returns + prompt_guidance, so filling in
+# `what` improves the prompt as well as the document.
 
 TOOL_SPECS = [
     {
         "name": "get_claim",
-        "args": '{"claim_id": "CLM-8842"}',
-        "returns": "the claim as filed: member, hospital, date of service, "
-                   "documents supplied, and every line item with its amount.",
-        "when_to_use": "only if you need to re-read the claim; the claim is "
-                       "already given to you in full in the first message.",
-        "guardrail": "read-only; unknown claim_id returns an explicit "
-                     "NOT FOUND observation rather than an empty result.",
-        "cost": "free (local lookup)",
+        "signature": "get_claim(claim_id: str) -> str",
+        "what": "",  # TODO D2(a)/D2(b) owner. Note this is the tool the
+                     # three questions are most likely to remove: the claim is
+                     # already in the first user message, so nothing fails
+                     # without it.
+        "input": (
+            "claim_id: str, e.g. \"CLM-8842\". An id that matches no claim "
+            "returns an explicit NOT FOUND string, never an empty result."
+        ),
+        "returns": (
+            "one line of prose: member, hospital, date of service, documents "
+            "supplied, every line item, and the untrusted narrative. "
+            "SIZE BOUND: one record, at most 343 characters (~86 tokens), "
+            "measured over all 15 shipped claims."
+        ),
+        "fails_when": "no claim carries that claim_id.",
+        "irreversible": "No. Read-only.",
+        "poka_yoke": [],  # TODO D2(b) owner
+        "prompt_guidance": (
+            "only if you need to re-read the claim; the claim is already "
+            "given to you in full in the first message."
+        ),
     },
     {
         "name": "lookup_member_policy",
-        "args": '{"member_id": "M-2214"}',
-        "returns": "the member and their policy in one hop: policy id, status, "
-                   "start and end date, annual limit, amount used to date, "
-                   "remaining limit, and the exclusion list.",
-        "when_to_use": "first, on every claim. Status, dates and remaining "
-                       "limit decide whether the claim is worth pricing at all.",
-        "guardrail": "read-only; returns remaining limit pre-computed so the "
-                     "model never has to subtract.",
-        "cost": "free (local lookup)",
+        "signature": "lookup_member_policy(member_id: str) -> str",
+        "what": "",  # TODO
+        "input": (
+            "member_id: str, e.g. \"M-2214\". An unknown member returns NOT "
+            "FOUND. A member whose policy_id resolves to no policy returns a "
+            "NOT FOUND that names both ids, so a broken link is visible rather "
+            "than silent."
+        ),
+        "returns": (
+            "one line: member name, policy id and product, status, start and "
+            "end date, annual limit, used to date, remaining limit, and the "
+            "exclusion list. Remaining limit is pre-computed. "
+            "SIZE BOUND: one record, at most 259 characters (~65 tokens), "
+            "measured over all 5 shipped members."
+        ),
+        "fails_when": (
+            "no member carries that member_id, or the member's policy_id "
+            "resolves to no policy row."
+        ),
+        "irreversible": "No. Read-only.",
+        "poka_yoke": [],  # TODO
+        "prompt_guidance": (
+            "first, on every claim. Status, dates and remaining limit decide "
+            "whether the claim is worth pricing at all."
+        ),
     },
     {
         "name": "check_coverage",
-        "args": '{"policy_id": "POL-3310", "procedure_code": "47120"}',
-        "returns": "for one procedure on one policy: its description, whether "
-                   "the policy excludes it and under which rule, whether it "
-                   "requires pre-authorisation, and which supporting document "
-                   "it requires.",
-        "when_to_use": "once per line item, after the policy passes its checks.",
-        "guardrail": "read-only; one line per call, so a multi-line claim "
-                     "cannot be answered from a single lookup.",
-        "cost": "free (local lookup)",
+        "signature": (
+            "check_coverage(policy_id: str, procedure_code: str) -> str"
+        ),
+        "what": "",  # TODO
+        "input": (
+            "policy_id: str, e.g. \"POL-3310\". procedure_code: str, e.g. "
+            "\"47120\". Either one unknown returns a NOT FOUND naming which "
+            "of the two was not found."
+        ),
+        "returns": (
+            "one line: the procedure description, whether the policy excludes "
+            "it and under which rule, requires_preauth yes/no, and the "
+            "required supporting document or none. "
+            "SIZE BOUND: one line item, at most 145 characters (~36 tokens), "
+            "measured over all 50 policy x procedure pairs."
+        ),
+        "fails_when": (
+            "no policy carries that policy_id, or no procedure carries that "
+            "procedure_code."
+        ),
+        "irreversible": "No. Read-only.",
+        "poka_yoke": [],  # TODO
+        "prompt_guidance": (
+            "once per line item, after the policy passes its checks."
+        ),
     },
     {
         "name": "get_preauthorisation",
-        "args": '{"member_id": "M-2214", "procedure_code": "62480", '
-                '"date_of_service": "2026-09-02"}',
-        "returns": "the pre-authorisation for that member and procedure, its "
-                   "validity window, and whether it was valid on the date of "
-                   "service.",
-        "when_to_use": "only for lines where check_coverage said "
-                       "requires_preauth: yes. Never for any other line.",
-        "guardrail": "date_of_service is a required argument, so validity is "
-                     "always evaluated and an expired authorisation can never "
-                     "be read as a valid one.",
-        "cost": "free (local lookup)",
+        "signature": (
+            "get_preauthorisation(member_id: str, procedure_code: str, "
+            "date_of_service: str) -> str"
+        ),
+        "what": "",  # TODO
+        "input": (
+            "member_id: str. procedure_code: str. date_of_service: str, an "
+            "ISO date. The date is REQUIRED, not optional: validity is always "
+            "evaluated against it. A member or procedure with no record on "
+            "file returns NO RECORD, which is a different string from an "
+            "expired record."
+        ),
+        "returns": (
+            "one line: the preauth id, its validity window, and an explicit "
+            "VALID / NOT VALID verdict for the date of service. "
+            "SIZE BOUND: at most one record, at most 161 characters "
+            "(~40 tokens), measured over all 50 member x procedure pairs."
+        ),
+        "fails_when": (
+            "the member has no pre-authorisation on file for that procedure. "
+            "Note this is reported as NO RECORD, not as an error: a missing "
+            "authorisation is a business fact, not a lookup failure."
+        ),
+        "irreversible": "No. Read-only.",
+        "poka_yoke": [],  # TODO
+        "prompt_guidance": (
+            "only for lines where check_coverage said requires_preauth: yes. "
+            "Never for any other line."
+        ),
     },
     {
         "name": "check_hospital",
-        "args": '{"hospital_id": "H-114"}',
-        "returns": "the hospital name, country, and whether it is on panel.",
-        "when_to_use": "once per claim. Non-panel does not change the decision, "
-                       "but it must be recorded in the decision letter.",
-        "guardrail": "read-only; panel status is returned as an explicit "
-                     "yes/no, never as an absent field.",
-        "cost": "free (local lookup)",
+        "signature": "check_hospital(hospital_id: str) -> str",
+        "what": "",  # TODO
+        "input": (
+            "hospital_id: str, e.g. \"H-114\". An unknown id returns NOT "
+            "FOUND."
+        ),
+        "returns": (
+            "one line: hospital name, country, and panel status stated "
+            "explicitly as ON PANEL or NON-PANEL, never as an absent field. "
+            "SIZE BOUND: one record, at most 65 characters (~16 tokens), "
+            "measured over all 4 shipped hospitals."
+        ),
+        "fails_when": "no hospital carries that hospital_id.",
+        "irreversible": "No. Read-only.",
+        "poka_yoke": [],  # TODO
+        "prompt_guidance": (
+            "once per claim. Non-panel does not change the decision, but it "
+            "must be recorded in the decision letter."
+        ),
     },
     {
         "name": "check_duplicate",
-        "args": '{"member_id": "M-2214", "hospital_id": "H-114", '
-                '"date_of_service": "2026-08-20", '
-                '"lines": [{"code": "47120", "amount": 1500}]}',
-        "returns": "an already-decided claim matching on ALL FOUR of member, "
-                   "hospital, date of service and line items, or NO MATCH.",
-        "when_to_use": "once per claim, before pricing the lines.",
-        "guardrail": "all four facts are required arguments and all four must "
-                     "match; near-misses in the claims history are reported as "
-                     "NO MATCH so a three-field shortcut is impossible.",
-        "cost": "free (local lookup)",
+        "signature": (
+            "check_duplicate(member_id: str, hospital_id: str, "
+            "date_of_service: str, lines: list[dict]) -> str"
+        ),
+        "what": "",  # TODO
+        "input": (
+            "member_id: str. hospital_id: str. date_of_service: str, an ISO "
+            "date. lines: the claim's line items as [{\"code\", \"amount\"}]. "
+            "All four are REQUIRED and all four must match. Omitting one is a "
+            "TypeError, not a looser search."
+        ),
+        "returns": (
+            "one line: either MATCH naming the prior claim, its decision and "
+            "the four facts that matched, or NO MATCH. "
+            "SIZE BOUND: at most one prior claim, at most 197 characters "
+            "(~49 tokens), measured over all 15 shipped claims."
+        ),
+        "fails_when": (
+            "never returns nothing. No duplicate is reported as NO MATCH, "
+            "which is an answer rather than an absence."
+        ),
+        "irreversible": "No. Read-only.",
+        "poka_yoke": [],  # TODO
+        "prompt_guidance": "once per claim, before pricing the lines.",
     },
     {
         "name": "issue_decision_letter",
-        "args": '{"claim_id": "CLM-8842", "decision": "approve_in_principle", '
-                '"detail": {...}}',
-        "returns": "a confirmation string, or GATE REFUSED with the reason.",
-        "when_to_use": "exactly once, as the last action before your Final "
-                       "Answer, when you have the evidence for your decision.",
-        "guardrail": "GATED AND IRREVERSIBLE. The gate refuses the write "
-                     "unless the policy has been looked up in this run, the "
-                     "decision is one of the three allowed values, the detail "
-                     "carries the fields that decision requires, and no letter "
-                     "has already been issued for this claim.",
-        "cost": "free, but irreversible: it appends the decision record.",
+        "signature": (
+            "issue_decision_letter(claim_id: str, decision: str, "
+            "detail: dict) -> str"
+        ),
+        "what": "",  # TODO
+        "input": (
+            "claim_id: str, and it must be the claim under assessment. "
+            "decision: str, one of approve_in_principle, request_document, "
+            "escalate. detail: dict; the required keys depend on the "
+            "decision - escalate needs a known trigger, request_document "
+            "needs missing_document and line, approve_in_principle needs "
+            "line_dispositions covering every filed line plus numeric "
+            "approved_total and refused_total. Any bad value is REFUSED, not "
+            "corrected: the gate returns a GATE REFUSED string naming the "
+            "reason, and nothing is written."
+        ),
+        "returns": (
+            "one line: RECORDED naming the claim and decision, or GATE "
+            "REFUSED naming the reason. "
+            "SIZE BOUND: one line, at most 160 characters (~40 tokens)."
+        ),
+        "fails_when": (
+            "the gate refuses: a letter has already been issued in this run; "
+            "the claim_id is not the claim under assessment; the decision is "
+            "not one of the three; the policy has not been looked up in this "
+            "run; or the detail is missing the fields that decision requires."
+        ),
+        "irreversible": (
+            "YES. It appends one record to decisions.jsonl. Covered by "
+            "tools.ClaimsTools.check_decision_gate, which runs before the "
+            "write, plus the loop-level gate in agent.ClaimsAgent._finalise "
+            "that refuses a final answer until the letter exists."
+        ),
+        "poka_yoke": [],  # TODO
+        "prompt_guidance": (
+            "exactly once, as the last action before your Final Answer, when "
+            "you have the evidence for your decision."
+        ),
     },
 ]
 
 
 def render_tool_list():
-    """Render TOOL_SPECS as the tool section of the system prompt."""
+    """Render TOOL_SPECS as the tool section of the system prompt.
+
+    Uses the signature, the one-line WHAT if it has been written, the return
+    shape and the procedural guidance. The descriptor is the source; the
+    prompt is a view of it.
+    """
     blocks = []
     for spec in TOOL_SPECS:
-        blocks.append(
-            "- {name}\n"
-            "    arguments: {args}\n"
-            "    returns:   {returns}\n"
-            "    use it:    {when_to_use}".format(**spec)
-        )
+        lines = ["- {}".format(spec["signature"])]
+        if spec["what"]:
+            lines.append("    what:      {}".format(spec["what"]))
+        lines.append("    returns:   {}".format(spec["returns"]))
+        lines.append("    use it:    {}".format(spec["prompt_guidance"]))
+        blocks.append("\n".join(lines))
     return "\n".join(blocks)
 
 
