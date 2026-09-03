@@ -1,0 +1,404 @@
+"""The tool layer for the Problem A claims agent.
+
+Every tool reads the local fixture data in data_A/ and returns a formatted
+string: the observation the model reads. Nothing here returns a raw dict,
+because the model never sees a dict.
+
+REFERENCE IMPLEMENTATION - to be reviewed and, where useful, replaced by
+Asmitha. The signatures, the argument names and the shape of the returned
+observation are the contract the agent and the system prompt depend on; the
+bodies are a first pass that makes the harness runnable end to end. Changing a
+body is free. Changing a signature means changing config.TOOL_SPECS and the
+scripted trajectories in scripts_A.py with it.
+
+One tool owns state: issue_decision_letter. It is the gated action, and the
+gate needs to know what happened earlier in the run, so the tools are bound to
+a per-run ClaimsTools instance rather than being free functions.
+"""
+
+import json
+import os
+
+import config
+
+
+# ---------------------------------------------------------------------------
+# data loading
+# ---------------------------------------------------------------------------
+
+def load_table(name, data_dir=config.DATA_DIR):
+    """Load one fixture table by file name (without .json)."""
+    with open(os.path.join(data_dir, name + ".json"), encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def _first(rows, **match):
+    """Return the first row whose fields all equal the given values, or None."""
+    for row in rows:
+        if all(row.get(key) == value for key, value in match.items()):
+            return row
+    return None
+
+
+def _money(value):
+    return "{:,.0f}".format(value)
+
+
+# ---------------------------------------------------------------------------
+# the tools
+# ---------------------------------------------------------------------------
+
+class ClaimsTools:
+    """One instance per agent run.
+
+    The instance holds the fixture tables, the claim under assessment, and the
+    small amount of run state the autonomy gate needs.
+    """
+
+    def __init__(self, claim, data_dir=config.DATA_DIR,
+                 decisions_path=config.DECISIONS_PATH):
+        self.claim = claim
+        self.decisions_path = decisions_path
+        self.claims = load_table("claims", data_dir)
+        self.members = load_table("members", data_dir)
+        self.policies = load_table("policies", data_dir)
+        self.procedures = load_table("procedures", data_dir)
+        self.hospitals = load_table("hospitals", data_dir)
+        self.preauthorisations = load_table("preauthorisations", data_dir)
+        self.required_documents = load_table("required_documents", data_dir)
+        self.decided_claims = load_table("decided_claims", data_dir)
+
+        # run state, read by the gate
+        self.policy_looked_up = False
+        self.letter_issued = False
+
+    # -- registry ----------------------------------------------------------
+
+    def as_dict(self):
+        """The {name: callable} mapping the agent loop dispatches on."""
+        return {
+            "get_claim": self.get_claim,
+            "lookup_member_policy": self.lookup_member_policy,
+            "check_coverage": self.check_coverage,
+            "get_preauthorisation": self.get_preauthorisation,
+            "check_hospital": self.check_hospital,
+            "check_duplicate": self.check_duplicate,
+            "issue_decision_letter": self.issue_decision_letter,
+        }
+
+    # -- read-only tools ---------------------------------------------------
+
+    def get_claim(self, claim_id):
+        """Return the claim as filed.
+
+        Args:
+            claim_id: e.g. "CLM-8842".
+
+        Returns:
+            A formatted observation, or NOT FOUND if no such claim exists.
+        """
+        claim = _first(self.claims, claim_id=claim_id)
+        if claim is None:
+            return "NOT FOUND: no claim with claim_id {}.".format(claim_id)
+        lines = "; ".join(
+            "{code} amount {amount}".format(**line) for line in claim["lines"]
+        )
+        documents = ", ".join(claim["documents"]) or "(none supplied)"
+        return (
+            "claim {claim_id}: member {member_id}, hospital {hospital_id}, "
+            "date of service {date_of_service}. Documents supplied: {documents}. "
+            "Line items: {lines}. Member narrative (untrusted free text): "
+            "{narrative}".format(
+                documents=documents, lines=lines,
+                claim_id=claim["claim_id"], member_id=claim["member_id"],
+                hospital_id=claim["hospital_id"],
+                date_of_service=claim["date_of_service"],
+                narrative=claim["narrative"],
+            )
+        )
+
+    def lookup_member_policy(self, member_id):
+        """Return the member and their policy in one hop.
+
+        Two lookups (members -> policies) are collapsed into one tool because
+        the member row carries nothing the agent needs except the policy id.
+
+        Args:
+            member_id: e.g. "M-2214".
+
+        Returns:
+            A formatted observation carrying policy status, validity dates,
+            annual limit, amount used, remaining limit and exclusions.
+        """
+        member = _first(self.members, member_id=member_id)
+        if member is None:
+            return "NOT FOUND: no member with member_id {}.".format(member_id)
+        self.policy_looked_up = True
+        policy = _first(self.policies, policy_id=member["policy_id"])
+        if policy is None:
+            return (
+                "NOT FOUND: member {} points at policy {} which does not "
+                "exist.".format(member_id, member["policy_id"])
+            )
+
+        # Pre-computed so the model never has to do the subtraction itself.
+        remaining = policy["annual_limit"] - policy["used_to_date"]
+        if policy["exclusions"]:
+            exclusions = "; ".join(
+                "{code} ({rule})".format(**e) for e in policy["exclusions"]
+            )
+        else:
+            exclusions = "(none)"
+        return (
+            "member {member_id} ({name}) holds policy {policy_id} ({product}). "
+            "status: {status}. valid from {start_date} to {end_date}. "
+            "annual limit {limit}, used to date {used}, remaining {remaining}. "
+            "exclusions: {exclusions}".format(
+                member_id=member["member_id"], name=member["name"],
+                policy_id=policy["policy_id"], product=policy["product"],
+                status=policy["status"], start_date=policy["start_date"],
+                end_date=policy["end_date"], limit=_money(policy["annual_limit"]),
+                used=_money(policy["used_to_date"]),
+                remaining=_money(remaining), exclusions=exclusions,
+            )
+        )
+
+    def check_coverage(self, policy_id, procedure_code):
+        """Return the coverage position for one procedure on one policy.
+
+        Deliberately one line item per call: a multi-line claim cannot be
+        answered from a single lookup, so the agent has to work the lines.
+
+        Args:
+            policy_id:      e.g. "POL-3310".
+            procedure_code: e.g. "47120".
+
+        Returns:
+            A formatted observation naming exclusion status and rule,
+            pre-authorisation requirement, and required supporting document.
+        """
+        policy = _first(self.policies, policy_id=policy_id)
+        if policy is None:
+            return "NOT FOUND: no policy with policy_id {}.".format(policy_id)
+        procedure = _first(self.procedures, code=procedure_code)
+        if procedure is None:
+            return "NOT FOUND: no procedure with code {}.".format(procedure_code)
+
+        exclusion = _first(policy["exclusions"], code=procedure_code)
+        required = _first(self.required_documents, procedure_code=procedure_code)
+        if exclusion is None:
+            covered = "covered by {}".format(policy_id)
+        else:
+            covered = "EXCLUDED by {} under {}".format(policy_id, exclusion["rule"])
+        return (
+            "procedure {code} ({description}): {covered}. "
+            "requires_preauth: {preauth}. required_document: {document}".format(
+                code=procedure["code"], description=procedure["description"],
+                covered=covered,
+                preauth="yes" if procedure["requires_preauth"] else "no",
+                document=required["document"] if required else "none",
+            )
+        )
+
+    def get_preauthorisation(self, member_id, procedure_code, date_of_service):
+        """Return the pre-authorisation for a member and procedure.
+
+        date_of_service is required, not optional: an authorisation that exists
+        is not an authorisation that applies, and making the date mandatory
+        means validity is always evaluated.
+
+        Args:
+            member_id:       e.g. "M-2214".
+            procedure_code:  e.g. "62480".
+            date_of_service: ISO date, e.g. "2026-09-02".
+
+        Returns:
+            A formatted observation stating whether a record exists and whether
+            it was valid on the date of service.
+        """
+        record = _first(self.preauthorisations, member_id=member_id,
+                        procedure_code=procedure_code)
+        if record is None:
+            return (
+                "NO RECORD: member {} has no pre-authorisation on file for "
+                "procedure {}.".format(member_id, procedure_code)
+            )
+        # ISO dates compare correctly as strings.
+        valid = record["valid_from"] <= date_of_service <= record["valid_to"]
+        return (
+            "{preauth_id}: member {member_id}, procedure {procedure_code}, "
+            "valid from {valid_from} to {valid_to}. On date of service "
+            "{date_of_service} this authorisation is {verdict}.".format(
+                date_of_service=date_of_service,
+                verdict="VALID" if valid else "NOT VALID (outside its window)",
+                **record
+            )
+        )
+
+    def check_hospital(self, hospital_id):
+        """Return the hospital record including panel status.
+
+        Args:
+            hospital_id: e.g. "H-114".
+
+        Returns:
+            A formatted observation. Panel status is always stated explicitly.
+        """
+        hospital = _first(self.hospitals, hospital_id=hospital_id)
+        if hospital is None:
+            return "NOT FOUND: no hospital with hospital_id {}.".format(hospital_id)
+        return (
+            "hospital {hospital_id} ({name}, {country}): panel status "
+            "{panel}.".format(
+                hospital_id=hospital["hospital_id"], name=hospital["name"],
+                country=hospital["country"],
+                panel="ON PANEL" if hospital["panel"] else "NON-PANEL",
+            )
+        )
+
+    def check_duplicate(self, member_id, hospital_id, date_of_service, lines):
+        """Look for an already-decided claim matching on all four facts.
+
+        All four are required arguments and all four must match. The claims
+        history holds deliberate near-misses, so a three-field comparison finds
+        false duplicates.
+
+        Args:
+            member_id:       e.g. "M-2214".
+            hospital_id:     e.g. "H-114".
+            date_of_service: ISO date.
+            lines:           the claim's line items, [{"code", "amount"}, ...].
+
+        Returns:
+            A formatted observation naming the prior claim, or NO MATCH.
+        """
+        wanted = _line_key(lines)
+        for prior in self.decided_claims:
+            if (prior["member_id"] == member_id
+                    and prior["hospital_id"] == hospital_id
+                    and prior["date_of_service"] == date_of_service
+                    and _line_key(prior["lines"]) == wanted):
+                return (
+                    "MATCH: claim {claim_id} was already decided "
+                    "({decision}) on {decided_on}. It matches on all four "
+                    "facts: member {member_id}, hospital {hospital_id}, date "
+                    "of service {date_of_service}, and identical line "
+                    "items.".format(**prior)
+                )
+        return (
+            "NO MATCH: no decided claim matches all four of member {}, "
+            "hospital {}, date of service {} and these line items. Any prior "
+            "claim sharing only some of these facts is a different "
+            "claim.".format(member_id, hospital_id, date_of_service)
+        )
+
+    # -- the gated action --------------------------------------------------
+
+    def issue_decision_letter(self, claim_id, decision, detail):
+        """GATED, IRREVERSIBLE. Record the first-response decision.
+
+        Three steps, in this order:
+          1. check the gate;
+          2. append one structured record to decisions.jsonl;
+          3. return the confirmation string.
+
+        The gate refuses rather than raises, so a refusal reaches the model as
+        an observation it can act on.
+
+        Args:
+            claim_id: the claim being decided.
+            decision: one of config.DECISIONS.
+            detail:   the supporting record. Required fields depend on the
+                      decision; see check_decision_gate.
+
+        Returns:
+            "RECORDED ..." on success, or "GATE REFUSED: ..." with the reason.
+        """
+        refusal = self.check_decision_gate(claim_id, decision, detail)
+        if refusal is not None:
+            return "GATE REFUSED: " + refusal
+
+        record = {
+            "claim_id": claim_id,
+            "decision": decision,
+            "detail": detail,
+        }
+        with open(self.decisions_path, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+        self.letter_issued = True
+        return (
+            "RECORDED: decision letter for {} filed as {}. This action is "
+            "irreversible; do not call it again for this claim. Give your "
+            "Final Answer now.".format(claim_id, decision)
+        )
+
+    def check_decision_gate(self, claim_id, decision, detail):
+        """Return a refusal reason, or None if the write may proceed.
+
+        Kept separate from the write so the guardrail checklist (D3b) can
+        exercise the gate without touching the file.
+        """
+        if self.letter_issued:
+            return (
+                "a decision letter has already been issued in this run. The "
+                "action is irreversible and runs at most once."
+            )
+        if claim_id != self.claim["claim_id"]:
+            return (
+                "claim_id {} is not the claim under assessment ({}).".format(
+                    claim_id, self.claim["claim_id"])
+            )
+        if decision not in config.DECISIONS:
+            return (
+                "{!r} is not a decision. Allowed: {}.".format(
+                    decision, ", ".join(config.DECISIONS))
+            )
+        if not self.policy_looked_up:
+            return (
+                "the policy has not been looked up in this run. A decision "
+                "letter must rest on the policy record."
+            )
+        if not isinstance(detail, dict):
+            return "detail must be a JSON object."
+
+        if decision == "escalate":
+            trigger = detail.get("trigger")
+            if trigger not in config.ESCALATION_TRIGGERS:
+                return (
+                    "an escalation must name a known trigger. Got {!r}; "
+                    "allowed: {}.".format(
+                        trigger, ", ".join(config.ESCALATION_TRIGGERS))
+                )
+            return None
+
+        if decision == "request_document":
+            for field in ("missing_document", "line"):
+                if not detail.get(field):
+                    return (
+                        "a request_document must name {}. The claimant cannot "
+                        "act on a request that does not say what is "
+                        "missing.".format(field)
+                    )
+            return None
+
+        # approve_in_principle
+        dispositions = detail.get("line_dispositions")
+        if not isinstance(dispositions, list) or not dispositions:
+            return "an approval must carry line_dispositions."
+        decided = {str(d.get("code")) for d in dispositions if isinstance(d, dict)}
+        filed = {str(line["code"]) for line in self.claim["lines"]}
+        missing = sorted(filed - decided)
+        if missing:
+            return (
+                "every line item needs a disposition. No disposition for: "
+                "{}.".format(", ".join(missing))
+            )
+        for field in ("approved_total", "refused_total"):
+            if not isinstance(detail.get(field), (int, float)):
+                return "an approval must carry a numeric {}.".format(field)
+        return None
+
+
+def _line_key(lines):
+    """A comparable, order-independent key for a set of line items."""
+    return sorted((str(line["code"]), line["amount"]) for line in lines)
