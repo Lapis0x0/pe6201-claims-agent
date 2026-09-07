@@ -1,0 +1,49 @@
+[
+  {
+    "case_id": "CLM-8842",
+    "trial": 1,
+    "family": "partly_payable",
+    "expected": "approve_in_principle",
+    "expected_trigger": null,
+    "actual": "approve_in_principle",
+    "actual_trigger": null,
+    "passed": true,
+    "reason": "",
+    "steps": 12,
+    "tool_calls": 10,
+    "stop_reason": "final_answer",
+    "letter_issued": true,
+    "must_record": [
+      "a disposition for all 3 lines",
+      "31255 refused under EX-14 cosmetic dermatology",
+      "PA-5521 cited for line 62480",
+      "approved_total 2180",
+      "refused_total 300"
+    ],
+    "detail": {
+      "approved_total": 2180,
+      "refused_total": 300,
+      "line_dispositions": [
+        {
+          "code": "47120",
+          "amount": 1400,
+          "disposition": "approved"
+        },
+        {
+          "code": "62480",
+          "amount": 780,
+          "disposition": "approved"
+        },
+        {
+          "code": "31255",
+          "amount": 300,
+          "disposition": "refused",
+          "exclusion": "EX-14 cosmetic dermatology"
+        }
+      ]
+    },
+    "prompt_tokens": 29158,
+    "completion_tokens": 1089,
+    "runtime_seconds": 29.88549304008484
+  }
+]
