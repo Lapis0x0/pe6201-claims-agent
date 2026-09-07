@@ -1,3 +1,8 @@
 # The scripted backend - the default of this repository - needs nothing beyond
 # the Python standard library. Install this only to run the live model battery.
 openai>=1.0
+
+# Only needed to run A2_analysis.ipynb (plots for the report). Not required
+# for D5(a): harness.py reproduces with zero dependencies beyond the above.
+matplotlib>=3.7
+ipykernel>=6.0
