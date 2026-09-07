@@ -21,6 +21,7 @@ system that cannot finish its own reasoning.
 import argparse
 import json
 import os
+import time
 from dataclasses import dataclass, field
 
 import config
@@ -160,6 +161,8 @@ class AgentResult:
     trace: list = field(default_factory=list)
     prompt_tokens: int = 0
     completion_tokens: int = 0
+    runtime_seconds: float = 0.0
+    guardrails_fired: list = field(default_factory=list)
 
     def summary(self):
         line = "{:<10} {:<22} steps={:<3} tools={:<3} {}".format(
@@ -179,7 +182,7 @@ class ClaimsAgent:
                  max_steps=config.MAX_STEPS,
                  max_tool_calls=config.MAX_TOOL_CALLS,
                  max_repeats=config.MAX_REPEATS,
-                 verbose=False):
+                 verbose=False, prompt_overrides=None):
         self.backend = backend
         self.claim = claim
         self.tools_obj = claim_tools or tools_module.ClaimsTools(claim)
@@ -188,12 +191,21 @@ class ClaimsAgent:
         self.max_tool_calls = max_tool_calls
         self.max_repeats = max_repeats
         self.verbose = verbose
+        # D2(b)'s v1-vs-v2 lever: swap in a worse descriptor for one tool
+        # without touching config.TOOL_SPECS. See descriptors_v1.py.
+        self.prompt_overrides = prompt_overrides
 
         self.tool_calls = 0
         self.call_counts = {}
         self.refusals = 0
         self.parse_failures = 0
         self.final_answer_pushbacks = 0
+        self._start_time = None
+        # D1 instrumentation: every guardrail EVENT during the run, not just
+        # the one that (maybe) ended it - a run that self-corrects after one
+        # gate refusal still triggered that guardrail, even though it went
+        # on to finish normally.
+        self.guardrails_fired = []
 
     # -- helpers -----------------------------------------------------------
 
@@ -216,6 +228,27 @@ class ClaimsAgent:
         self.call_counts[key] = self.call_counts.get(key, 0) + 1
         if self.call_counts[key] > self.max_repeats:
             self.refusals += 1
+            self.guardrails_fired.append("action_deduplication")
+            if name == "issue_decision_letter":
+                # Found live (D5b): the generic "nothing will change" message
+                # below is actively wrong advice here. A GATE REFUSED on this
+                # tool means the arguments were malformed, not that the
+                # answer is settled - repeating identical arguments will
+                # never succeed, but DIFFERENT, corrected arguments might.
+                # Telling the model to "use the observation you already
+                # have" when that observation was a refusal, not a result,
+                # was measured driving repeated_action and step_cap_exceeded
+                # failures that were never business-logic mistakes.
+                return (
+                    "REFUSED: you have sent issue_decision_letter these "
+                    "EXACT arguments {} times and every attempt was refused "
+                    "by the gate. Sending the same arguments again will "
+                    "fail the same way. Re-read the GATE REFUSED reason "
+                    "from your last attempt, fix the specific field it "
+                    "named, and call issue_decision_letter again with "
+                    "CORRECTED arguments - do not resend the identical "
+                    "detail object.".format(self.max_repeats)
+                )
             return (
                 "REFUSED: you have already called {} with these exact "
                 "arguments {} times. The records do not change during a run, "
@@ -225,11 +258,12 @@ class ClaimsAgent:
 
         self.tool_calls += 1
         try:
-            return str(self.tools[name](**args))
+            observation = str(self.tools[name](**args))
         except NotImplementedError as exc:
             # A tool left as a stub must not take the loop down with it.
             return "TOOL NOT IMPLEMENTED: {} ({}).".format(name, exc)
         except TypeError as exc:
+            self.guardrails_fired.append("invalid_arguments")
             return (
                 "BAD ARGUMENTS for {}: {}. Check the argument names in the "
                 "tool list.".format(name, exc)
@@ -237,6 +271,9 @@ class ClaimsAgent:
         except Exception as exc:                      # noqa: BLE001
             return "TOOL ERROR in {}: {}: {}".format(
                 name, type(exc).__name__, exc)
+        if observation.startswith("GATE REFUSED"):
+            self.guardrails_fired.append("autonomy_gate")
+        return observation
 
     def _escalate(self, trigger, note, steps, messages):
         detail = {"trigger": trigger, "note": note,
@@ -252,13 +289,20 @@ class ClaimsAgent:
             trace=messages,
             prompt_tokens=getattr(self.backend, "prompt_tokens", 0),
             completion_tokens=getattr(self.backend, "completion_tokens", 0),
+            runtime_seconds=self._runtime(),
+            guardrails_fired=list(self.guardrails_fired),
         )
 
     # -- the loop ----------------------------------------------------------
 
+    def _runtime(self):
+        return time.time() - self._start_time if self._start_time else 0.0
+
     def run(self):
+        self._start_time = time.time()
         messages = [
-            {"role": "system", "content": config.build_system_prompt()},
+            {"role": "system",
+             "content": config.build_system_prompt(self.prompt_overrides)},
             {"role": "user", "content": config.format_claim_prompt(self.claim)},
         ]
 
@@ -271,6 +315,7 @@ class ClaimsAgent:
 
             if parsed.error:
                 self.parse_failures += 1
+                self.guardrails_fired.append("unparseable_output")
                 if self.parse_failures > config.MAX_PARSE_FAILURES:
                     return self._escalate(
                         "unparseable_model_output",
@@ -296,6 +341,7 @@ class ClaimsAgent:
 
             # budget ceiling, checked before spending it
             if self.tool_calls + len(parsed.actions) > self.max_tool_calls:
+                self.guardrails_fired.append("budget_ceiling")
                 return self._escalate(
                     "budget_cap_exceeded",
                     "the run reached its ceiling of {} tool calls before "
@@ -317,6 +363,7 @@ class ClaimsAgent:
 
             messages.append({"role": "user", "content": "\n".join(observations)})
 
+        self.guardrails_fired.append("step_cap")
         return self._escalate(
             "step_cap_exceeded",
             "the run reached its cap of {} steps without a "
@@ -342,8 +389,12 @@ class ClaimsAgent:
             )})
             return None
 
-        # Autonomy gate: the record is the decision. No record, no decision.
-        if not self.tools_obj.letter_issued:
+        # Autonomy gate: the record is the decision. No record, no decision -
+        # except in "suggest" mode, where the gate refuses to let the tool
+        # write at all (tools.check_decision_gate) and the agent's job is
+        # only to conclude with a recommendation for a human to record.
+        if (self.tools_obj.autonomy != "suggest"
+                and not self.tools_obj.letter_issued):
             self.final_answer_pushbacks += 1
             if self.final_answer_pushbacks > config.MAX_PARSE_FAILURES:
                 return self._escalate(
@@ -369,6 +420,8 @@ class ClaimsAgent:
             trace=messages,
             prompt_tokens=getattr(self.backend, "prompt_tokens", 0),
             completion_tokens=getattr(self.backend, "completion_tokens", 0),
+            runtime_seconds=self._runtime(),
+            guardrails_fired=list(self.guardrails_fired),
         )
 
 

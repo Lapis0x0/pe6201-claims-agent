@@ -45,13 +45,28 @@ The decision-letter action is simulated locally and does **not** send a real let
 | File | What it is |
 |---|---|
 | `config.py` | Paths, the decision and trigger vocabularies, the guardrail caps, the tool descriptors, and the system prompt. The prompt's tool list is rendered from `TOOL_SPECS`, so the prompt cannot drift from the tool layer. |
-| `tools.py` | The tool layer. Seven tools over the local fixture data; each returns a formatted observation string. `issue_decision_letter` is the gated action and carries its own gate. |
+| `tools.py` | The tool layer. Six tools over the local fixture data (a seventh, `get_claim`, was cut under D2(a) — see `d2_tool_analysis.md`); each returns a formatted observation string. `issue_decision_letter` is the gated action and carries its own gate. |
 | `agent.py` | The ReAct loop and the code-level guardrails. Also a CLI for running one claim with its full trace. |
 | `backend.py` | `ScriptedBackend` (default, no key, no cost) and `LiveBackend` (OpenRouter, OpenAI-compatible). |
 | `scripts_A.py` | The recorded trajectories the scripted backend replays, one per shipped case. |
 | `harness.py` | The evaluation harness: runs the set, applies the code check, prints the judgement sheet. |
 | `data_A/`, `expected_outcomes_A.json`, `make_fixtures_A.py`, `check_my_data.py` | The fixture data, the answer key, the generator, and the data checker, as shipped. |
 | `d0_justification.md` | D0: why this problem needs an agent. |
+| `d1_sample_traces.md` | D1: one trace per outcome (approve/ask/escalate) and a fully instrumented decision record (turns, tool calls, tokens, cost, runtime, guardrails fired, evidence trace). |
+| `d2_tool_analysis.md` | D2(a): the tool set scored against the three questions, and the evidence for cutting `get_claim`. |
+| `d2b_descriptor_rewrite.md`, `descriptors_v1.py` | D2(b): the six-field descriptors live in `config.TOOL_SPECS`; the four poka-yoke moves and what each makes impossible; the v1-vs-v2 rewrite of `check_coverage`'s descriptor, both the static token measurement and the live pass rate/cost comparison on `openai/gpt-4o-mini` (70.0% vs 62.5% case-level). |
+| `d4_case_notes.md` | D4: how the evaluation set grew from 15 to 40 cases, the distribution, and the run arithmetic for this set. |
+| `d2c_measurement.md`, `measure_parallel.py` | D2(c): the dependency rule, and an exact (not approximated) parallel-vs-sequential token measurement over all 40 cases. |
+| `d3a_autonomy.md` | D3(a): the autonomy setting (suggest/confirm/act), made into real enforced behaviour rather than a descriptive label, and why `confirm` is the shipped default. |
+| `d3b_guardrail_checklist.md`, `guardrail_checklist.py` | D3(b): the 12-case guardrail checklist (step cap, budget ceiling, dedup, gate x3 incl. operator approval, invalid arguments, 3 hostile-narrative shapes), scripted and free. |
+| `d6_notes.md`, `d6_cost_model.py` | D6: the three-layer cost model, all four levers measured before/after, a sensitivity range in place of an unmeasured success rate, and the break-even mechanism. |
+| `d7_failures.md`, `failure1_loop.py`, `failure2_interface.py` | D7: two reproduced failures, each built as "the working agent, minus X." Failure 1 (required): de-duplication removed, a loop runs to the step cap; 3.0x turns, 3.6x cost, fixed by restoring the guard. Failure 2 (interface layer): `check_duplicate`'s match weakened from 4 facts to 3, producing a confident, wrong, and *cheaper*-looking escalation of a genuine claim. |
+| `demo_loop_failure.py` | A narrated, presentation-friendly run of Failure 1 — same evidence as `failure1_loop.py`, formatted for the 5-minute demo video. `python3 demo_loop_failure.py`, no key needed. |
+| `A2_tour.ipynb` | Optional — a narrated, one-case (`CLM-8842`) walkthrough of the whole system, cell by cell, mirroring the professor's own scaffold tour notebook but against our modules and our 40-case data. Good for onboarding teammates and for the demo video; not what a marker runs. |
+| `results/` | Committed run outputs (`--json` exports) the `d*.md` write-ups cite numbers from — see `results/README.md`. Everything there is free to regenerate except the one live smoke-test file. |
+| `A2_analysis.ipynb` | Optional — not a submission requirement (see D5(a): `harness.py` is what a marker runs). Imports the modules above to run and plot D2(a)/(b)/(c), D3(b), D4, D6, D7 and D5(b) in one place. Figures are also saved as `fig_*.png` for the report. |
+| `d5a_reproducibility.md` | D5(a): proof the scripted backend is deterministic — two clean runs, diffed, identical except wall-clock timing. |
+| `d5b_live_battery.md` | D5(b): the live battery across five models spanning five families and two-plus price tiers (`gpt-4o-mini`, `gemini-2.5-flash`, `deepseek-v4-flash`, `llama-3.1-8b-instruct`, `qwen-2.5-7b-instruct`) — pass rate, turns, tokens, cost and latency compared side by side, plus a failure-by-family matrix. |
 
 ## Running it
 

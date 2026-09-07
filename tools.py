@@ -53,13 +53,25 @@ class ClaimsTools:
 
     The instance holds the fixture tables, the claim under assessment, and the
     small amount of run state the autonomy gate needs.
+
+    `autonomy` selects which of config.AUTONOMY_SETTINGS the decision gate
+    enforces (D3a). `operator_approved` simulates whatever a real deployment
+    would use to know a human has signed off on THIS claim's proposed
+    decision - a dashboard click, a Slack approval, and so on. There is no
+    UI in this system (out of scope, D1), so it is a constructor argument:
+    the harness and the normal evaluation runs pass True (a human has
+    already reviewed, which is the ordinary case this system is built for);
+    D3(b)'s guardrail checklist passes False for exactly one case, to prove
+    the gate actually blocks when that hasn't happened.
     """
 
     def __init__(self, claim, data_dir=config.DATA_DIR,
-                 decisions_path=config.DECISIONS_PATH):
+                 decisions_path=config.DECISIONS_PATH,
+                 autonomy=config.AUTONOMY, operator_approved=True):
         self.claim = claim
         self.decisions_path = decisions_path
-        self.claims = load_table("claims", data_dir)
+        self.autonomy = autonomy
+        self.operator_approved = operator_approved
         self.members = load_table("members", data_dir)
         self.policies = load_table("policies", data_dir)
         self.procedures = load_table("procedures", data_dir)
@@ -77,7 +89,6 @@ class ClaimsTools:
     def as_dict(self):
         """The {name: callable} mapping the agent loop dispatches on."""
         return {
-            "get_claim": self.get_claim,
             "lookup_member_policy": self.lookup_member_policy,
             "check_coverage": self.check_coverage,
             "get_preauthorisation": self.get_preauthorisation,
@@ -87,35 +98,6 @@ class ClaimsTools:
         }
 
     # -- read-only tools ---------------------------------------------------
-
-    def get_claim(self, claim_id):
-        """Return the claim as filed.
-
-        Args:
-            claim_id: e.g. "CLM-8842".
-
-        Returns:
-            A formatted observation, or NOT FOUND if no such claim exists.
-        """
-        claim = _first(self.claims, claim_id=claim_id)
-        if claim is None:
-            return "NOT FOUND: no claim with claim_id {}.".format(claim_id)
-        lines = "; ".join(
-            "{code} amount {amount}".format(**line) for line in claim["lines"]
-        )
-        documents = ", ".join(claim["documents"]) or "(none supplied)"
-        return (
-            "claim {claim_id}: member {member_id}, hospital {hospital_id}, "
-            "date of service {date_of_service}. Documents supplied: {documents}. "
-            "Line items: {lines}. Member narrative (untrusted free text): "
-            "{narrative}".format(
-                documents=documents, lines=lines,
-                claim_id=claim["claim_id"], member_id=claim["member_id"],
-                hospital_id=claim["hospital_id"],
-                date_of_service=claim["date_of_service"],
-                narrative=claim["narrative"],
-            )
-        )
 
     def lookup_member_policy(self, member_id):
         """Return the member and their policy in one hop.
@@ -352,6 +334,17 @@ class ClaimsTools:
             return (
                 "{!r} is not a decision. Allowed: {}.".format(
                     decision, ", ".join(config.DECISIONS))
+            )
+        if self.autonomy == "suggest":
+            return (
+                "autonomy is 'suggest': this system may only recommend a "
+                "decision. A human must record it themselves; "
+                "issue_decision_letter cannot be called in this mode."
+            )
+        if self.autonomy == "confirm" and not self.operator_approved:
+            return (
+                "autonomy is 'confirm': no operator has approved this "
+                "claim's decision yet. The write is blocked until they do."
             )
         if not self.policy_looked_up:
             return (
