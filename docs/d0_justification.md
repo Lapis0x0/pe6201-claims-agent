@@ -54,12 +54,12 @@ D5(b)'s live battery (`openai/gpt-4o-mini`, full write-up in
 `d5b_live_battery.md`) supplies the real measured numbers:
 
 ```
-P = 0.675 (case-level pass rate), T = 7 (median turns)
-s = 0.675^(1/7) ~= 0.945
+P = 0.6875 (55/80 trials passed), T = 7 (median turns)
+s = 0.6875^(1/7) ~= 0.948
 ```
 
 An implied ~95% per-step reliability compounding over 7 turns produces the
-measured 67.5% run-success rate — the exact arithmetic this test argues in
+measured 68.75% trial-level run-success rate — the exact arithmetic this test argues in
 the abstract, now measured on our own system rather than illustrated with
 the brief's numbers. Grouping the failing runs by which step precedes them
 (D0(b)'s own suggested method) points at two specific, nameable weak
@@ -68,6 +68,36 @@ comparison — rather than a generally unreliable agent. That answers this
 section's question directly: **our bigger problem is step quality on a
 small number of specific steps, not step count in general** — cutting
 turns further would not fix either of those two steps.
+
+### The third test: the bill
+
+The third test asks whether the value of one completed task exceeds the token cost
+of a run divided by how often it works. The slide says this denominator must
+be the negative-case rate, not the happy-path rate. Using measured API token
+usage and the 60 negative trials per model, rather than the slide's illustrative
+`B=1,000`, `D=300`, and `$3/$15 per million`:
+
+`C_completed = C_run / p`
+
+| Model | Negative trials passed | Measured C/run | C/completed output |
+|---|---:|---:|---:|
+| gemini-2.5-flash | 57/60 (95.0%) | $0.00591 | $0.00622 |
+| deepseek-v4-flash | 53/60 (88.3%) | $0.00120 | $0.00136 |
+| gpt-4o-mini | 37/60 (61.7%) | $0.00311 | $0.00504 |
+| qwen-2.5-7b-instruct | 26/60 (43.3%) | $0.00205 | $0.00474 |
+| llama-3.1-8b-instruct | 30/60 (50.0%) | $0.00104 | $0.00209 |
+
+The completed-output threshold is below one cent for every tested model, so
+the token-only completed-task test is passed whenever a useful completed first
+response is worth more than the corresponding value in the last column.
+The cheapest raw run is not automatically the cheapest useful output: Qwen's
+lower reliability almost doubles its token cost per completion.
+
+This is a diagnostic for a **retry-until-success** world. D6 correctly uses
+the assignment's Class 5 **escalate-on-failure** world instead:
+`C_run + (1-p) x $7.60`. We report both because they answer different
+questions; we do not add them together. The calculation and
+`../figs/fig_d0_class4_bill_test.png` reproduce with `python3 class4_bill_test.py`.
 
 ## D0(c) — What counts as a good run
 

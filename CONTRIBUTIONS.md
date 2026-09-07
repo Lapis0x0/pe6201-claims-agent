@@ -8,13 +8,13 @@ statement of intent.
 
 | Member | Deliverables owned | Status |
 |---|---|---|
-| SHI ZHIYUN | Agent architecture: the ReAct loop (`agent.py`), the code-level guardrails (D3a), the gated action and its gate, the scripted backend and the recorded trajectories, the evaluation harness. D5 model-battery configuration. | Skeleton landed: loop, tools, backends, trajectories, harness. Scripted set passes 15/15. |
-| UBAIDULLA ASMITHA | The tool layer (`tools.py`): reviewing and hardening the reference implementations, the six-field descriptor contracts and their poka-yoke (D2b), the D2a tool-pruning analysis, and the parallel-call work with Shi Zhiyun (D2c). | Reference implementations in place and marked as such in `tools.py`. Descriptor fields (`guardrail`, `cost`) stubbed in `config.TOOL_SPECS` for completion. |
-| JIANG DONG | D0 justification (ladder placement, ground-truth and arithmetic tests, the five success criteria) and the D3b guardrail checklist — ten checks, at least three against hostile free text, all run on the scripted backend. | D0 landed (`d0_justification.md`). D3b outstanding; the caps and the gate it exercises are in place. |
-| LIU WEIQI | D6 cost model: the three-layer cost-to-serve formula, four levers with before/after, the ±10pp sensitivity band, break-even success rate, and three caps. Problem A inputs: 8,000 claims/month, US$7.60 failure cost. | Outstanding. `LiveBackend` records prompt and completion tokens per run so the model rests on measured numbers. |
-| NIU DUOER | D4 evaluation set (40 cases, 8 negative) and D7, the two reproducible failures. Sets the grading standard and consolidates the cases everyone writes. | Outstanding. The harness applies the code check and prints the judgement sheet; new cases go through `make_fixtures_A.py` plus a hand-written label. |
-| XU LIANGJUAN | The 2,000-word report and the five-minute demo, including the negative case it must show. Writes up the D2b tool descriptors. | Outstanding. |
-| Everyone | Five to eight evaluation cases each, to Niu Duoer. Everyone speaks in the demo. | Outstanding. |
+| SHI ZHIYUN | Agent architecture: ReAct loop, code guardrails, gated action, scripted backend, trajectories, harness, and live-battery configuration. | Landed and verified: the 40-case scripted set passes 80/80 trials; code-layer guardrails and multi-action parsing execute successfully. |
+| UBAIDULLA ASMITHA | Tool layer, six-field descriptor contracts and poka-yoke, D2(a) pruning, D2(b) v1 comparison, notebooks, and D2(c) work with Shi Zhiyun. | Landed and verified: six shipped tools, measured descriptor control arms, and the parallel/sequential experiment are committed. |
+| JIANG DONG | D0 justification and D3(b) guardrail checklist. | Landed and verified: D0 contains the measured reliability arithmetic; the scripted checklist passes 12/12, including three hostile-text cases. |
+| LIU WEIQI | D6 three-layer cost model, four-lever ledger, sensitivity analysis, break-even calculation, and cap economics. | Landed and verified: `d6_cost_model.py` reproduces D6 from canonical live result files using the FAQ-defined trial pass rate. |
+| NIU DUOER | D4 evaluation set and D7 reproducible failures; consolidation of team-authored cases. | Landed and verified: 40 labelled isolated cases, 20 negative cases, and two working/broken/restored failure reproductions. |
+| XU LIANGJUAN | Final report and demonstration; D2(b) write-up support and live-model evidence. | Repository-side D2(b) and live-result evidence has landed. Report and demonstration status is maintained outside this repository audit. |
+| Everyone | Five to eight evaluation cases each and participation in final live measurements/demonstration. | The consolidated 40-case set and five-model-plus-v1 evidence have landed. Individual case/model ownership must match the signed declaration and commit history. |
 
 ## Adding evaluation cases
 

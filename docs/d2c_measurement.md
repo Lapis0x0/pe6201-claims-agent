@@ -31,6 +31,15 @@ backend at every turn (the exact quantity the formula approximates). This is
 more accurate than plugging in an assumed `D`, and it still costs nothing —
 no network, no key.
 
+For a visual sensitivity view, `plot_turn_token_growth.py` uses the measured
+current prefix `B = 2,165` tokens and the median inferred growth from the
+parallel trajectories, `D = 176` tokens/turn. The resulting
+`../figs/fig_d0_turn_token_growth.png` separates the repeated-prefix and
+accumulated-history terms. Predicted input grows from 22,248 tokens at 8
+turns to 55,760 at 16 turns: **2.51x**, not 2x. The exact replay remains the
+D2(c) comparison; this curve isolates the turn trend so the nonlinear effect
+is visible.
+
 ## Results, full 40-case set, 1 trial each
 
 ```

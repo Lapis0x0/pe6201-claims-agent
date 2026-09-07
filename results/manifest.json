@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "run_date": "2026-09-06",
+  "pricing_source": "OpenRouter /api/v1/models, retrieved 2026-09-06; prices are preserved in harness.py",
+  "evaluation_set": "40 cases: 20 ordinary x1 trial and 20 negative x3 trials = 80 trials",
+  "primary_metric": "passing trials / total trials",
+  "supplementary_metric": "strict case consistency; every trial for a case must pass",
+  "canonical_live_runs": [
+    {"file":"d2b_live_v1_gpt4o_mini.json","purpose":"D2b v1","model":"openai/gpt-4o-mini","family":"OpenAI","prompt_version":"v1","trials":80,"passed_trials":48,"pass_rate":0.6},
+    {"file":"d2b_live_v2_gpt4o_mini.json","purpose":"D2b v2 and D5b","model":"openai/gpt-4o-mini","family":"OpenAI","prompt_version":"v2","trials":80,"passed_trials":55,"pass_rate":0.6875},
+    {"file":"d5b_live_gemini_2.5_flash.json","purpose":"D5b","model":"google/gemini-2.5-flash","family":"Google","prompt_version":"v2","trials":80,"passed_trials":77,"pass_rate":0.9625},
+    {"file":"d5b_live_deepseek_v4_flash.json","purpose":"D5b","model":"deepseek/deepseek-v4-flash","family":"DeepSeek","prompt_version":"v2","trials":80,"passed_trials":73,"pass_rate":0.9125},
+    {"file":"d5b_live_llama_3.1_8b_instruct.json","purpose":"D5b","model":"meta-llama/llama-3.1-8b-instruct","family":"Meta","prompt_version":"v2","trials":80,"passed_trials":39,"pass_rate":0.4875},
+    {"file":"d5b_live_qwen_2.5_7b_instruct.json","purpose":"D5b","model":"qwen/qwen-2.5-7b-instruct","family":"Alibaba/Qwen","prompt_version":"v2","trials":80,"passed_trials":41,"pass_rate":0.5125}
+  ],
+  "superseded": [
+    "d5b_live_smoke_CLM-8842.json",
+    "d5b_live_gpt4o_mini_full_battery.json",
+    "d5b_live_validation_after_fix.json",
+    "d5b_live_validation_after_prompt_fix.json"
+  ]
+}

@@ -70,9 +70,10 @@ code.
 
 | Metric | Prompt v1 (vague descriptor) | Prompt v2 (six-field, current) |
 |---|---|---|
-| Overall pass (case-level) | 25/40 (62.5%) | **28/40 (70.0%)** |
-| Ordinary pass | 17/20 (85.0%) | 18/20 (90.0%) |
-| Negative pass | 8/20 (40.0%) | **10/20 (50.0%)** |
+| **Primary pass rate (trials)** | 48/80 (60.0%) | **55/80 (68.75%)** |
+| Ordinary trials | 17/20 (85.0%) | 18/20 (90.0%) |
+| Negative trials | 31/60 (51.7%) | **37/60 (61.7%)** |
+| Supplementary strict case consistency | 25/40 (62.5%) | **28/40 (70.0%)** |
 | Avg input tokens/run | 17,561 | 18,574 |
 | Avg output tokens/run | 530 | 534 |
 | Avg cost/run | $0.00295 | $0.00311 |
@@ -88,9 +89,9 @@ unknown `policy_id`/`procedure_code` — v1 has none of these, just an
 untyped signature and "coverage details for the procedure." as its entire
 `returns` field.
 
-**What behaviour improved**: overall pass rate rose 7.5 points (62.5% ->
-70.0%), and the gain is concentrated in the negative cases (+10pp, 40% ->
-50%) more than the ordinary ones (+5pp) — consistent with the hypothesis
+**What behaviour improved**: the FAQ-defined trial-level pass rate rose 8.75
+points (60.0% -> 68.75%), and the gain is concentrated in negative trials
+(+10pp, 51.7% -> 61.7%) more than ordinary trials (+5pp) — consistent with the hypothesis
 that a vaguer descriptor mainly hurts the harder, more failure-prone
 decisions, not the easy ones. Comparing case-by-case: v2 fixed five cases
 v1 got wrong — three of them `required_document_*` cases

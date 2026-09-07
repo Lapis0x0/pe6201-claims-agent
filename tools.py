@@ -4,12 +4,10 @@ Every tool reads the local fixture data in data_A/ and returns a formatted
 string: the observation the model reads. Nothing here returns a raw dict,
 because the model never sees a dict.
 
-REFERENCE IMPLEMENTATION - to be reviewed and, where useful, replaced by
-Asmitha. The signatures, the argument names and the shape of the returned
-observation are the contract the agent and the system prompt depend on; the
-bodies are a first pass that makes the harness runnable end to end. Changing a
-body is free. Changing a signature means changing config.TOOL_SPECS and the
-scripted trajectories in scripts_A.py with it.
+The signatures, argument names and returned-observation shapes are the shipped
+contract shared by the agent and system prompt. Any future signature change
+must also update config.TOOL_SPECS and the scripted trajectories in
+scripts_A.py.
 
 One tool owns state: issue_decision_letter. It is the gated action, and the
 gate needs to know what happened earlier in the run, so the tools are bound to

@@ -34,31 +34,29 @@ Five distinct families, no two from the same lab; the price spread alone
 
 ## The comparison
 
-| Model | Case-level pass | Ordinary pass | Negative pass | Avg turns | Input tok/run | Output tok/run | Cost (80 trials) | Avg latency |
-|---|---|---|---|---|---|---|---|---|
-| gemini-2.5-flash | **39/40 (97.5%)** | 20/20 (100%) | 19/20 (95%) | 5.7 | 15,000 | 563 | $0.4725 | 7.2s |
-| deepseek-v4-flash | 36/40 (90.0%) | 20/20 (100%) | 16/20 (80%) | 5.2 | 12,887 | 1,006 | $0.0963 | 22.5s |
-| gpt-4o-mini | 28/40 (70.0%) | 18/20 (90%) | 10/20 (50%) | 7.5 | 18,574 | 534 | $0.2485 | 11.9s |
-| qwen-2.5-7b-instruct | 20/40 (50.0%) | 15/20 (75%) | 5/20 (25%) | 7.2 | 19,197 | 670 | $0.1643 | 21.2s |
-| llama-3.1-8b-instruct | 14/40 (35.0%) | 9/20 (45%) | 5/20 (25%) | 6.7 | 19,369 | 940 | $0.0835 | **69.8s** |
+| Model | **Primary trial pass** | Ordinary trials | Negative trials | Strict case consistency | Avg turns | Input tok/run | Output tok/run | Cost (80 trials) | Avg latency |
+|---|---|---|---|---|---|---|---|---|---|
+| gemini-2.5-flash | **77/80 (96.25%)** | 20/20 (100%) | 57/60 (95.0%) | 39/40 (97.5%) | 5.7 | 15,000 | 563 | $0.4725 | 7.2s |
+| deepseek-v4-flash | 73/80 (91.25%) | 20/20 (100%) | 53/60 (88.3%) | 36/40 (90.0%) | 5.2 | 12,887 | 1,006 | $0.0963 | 22.5s |
+| gpt-4o-mini | 55/80 (68.75%) | 18/20 (90%) | 37/60 (61.7%) | 28/40 (70.0%) | 7.5 | 18,574 | 534 | $0.2485 | 11.9s |
+| qwen-2.5-7b-instruct | 41/80 (51.25%) | 15/20 (75%) | 26/60 (43.3%) | 20/40 (50.0%) | 7.2 | 19,197 | 670 | $0.1643 | 21.2s |
+| llama-3.1-8b-instruct | 39/80 (48.75%) | 9/20 (45%) | 30/60 (50.0%) | 14/40 (35.0%) | 6.7 | 19,369 | 940 | $0.0835 | **69.8s** |
 
 All rows: 80 trials (20 ordinary x1 + 20 negative x3), same as D4's
-established arithmetic. Case-level pass rate is per-case (a negative
-case's 3 trials all have to pass); this is the number the ranking above is
-sorted on, and it's distinct from a raw trial-level average because
-negative cases are weighted 3x in trial count but 1x in case-level scoring
-— matching D4's own reporting convention.
+established arithmetic. The primary rate is the FAQ-defined passing trials
+divided by total trials. Strict case consistency is supplementary: a negative
+case counts there only when all three trials pass. D6 uses the primary rate.
 
 **Reading this table**:
 - **Accuracy and price don't move together.** `deepseek-v4-flash` beats
-  `gpt-4o-mini` on both accuracy (90% vs 70%) *and* cost ($0.10 vs $0.25)
+  `gpt-4o-mini` on both accuracy (91.25% vs 68.75%) *and* cost ($0.10 vs $0.25)
   simultaneously — cheaper is not automatically worse here. `gemini-2.5-flash`
-  is the accuracy ceiling (97.5%) at roughly 5x `deepseek`'s cost, still
+  is the accuracy ceiling (96.25%) at roughly 5x `deepseek`'s cost, still
   small in absolute terms ($0.47 for 80 trials).
 - **Negative cases are where models separate.** Every model's ordinary-case
   pass rate is higher than its negative-case pass rate, and the gap widens
-  as overall accuracy drops (`gemini`: 100% vs 95%, a 5pp gap; `llama`: 45%
-  vs 25%, only 20pp but off a much lower base) — this is exactly the
+  as overall accuracy drops (`gemini`: 100% vs 95%, a 5pp gap; `qwen`: 75%
+  vs 43.3%, a 31.7pp gap) — this is exactly the
   brief's own reason negative cases get 3 trials instead of 1: they're the
   cases models are least reliable on.
 - **Latency doesn't track price or accuracy.** `llama-3.1-8b-instruct` is
@@ -106,7 +104,7 @@ here: 5/5 pass):
 **The one universal failure is the most interesting finding in this whole
 battery**: `prompt_injection_imitating_tool_output` — a narrative that
 imitates the *format* of a real tool observation rather than instructing
-the agent directly — fools all five models, including the 97.5%-accurate
+the agent directly — fools all five models, including the 96.25%-accurate
 `gemini-2.5-flash`. Every other hostile-narrative family (overt jailbreak,
 fake authority, "skip this check") is caught by at least the two strongest
 models. This is real evidence for a specific, nameable weak point in the
@@ -129,11 +127,11 @@ a loop-control or gate failure.
 Using `s = P^(1/T)` (D0(b)'s method) on the strongest result:
 
 ```
-gemini-2.5-flash: P = 0.975 (case-level), T = 5.7 (avg turns)
-s = 0.975^(1/5.7) ~= 0.9955
+gemini-2.5-flash: P = 0.9625 (77/80 trials), T = 6 (median turns)
+s = 0.9625^(1/6) ~= 0.9936
 ```
 
-An implied ~99.5% per-step reliability compounding over ~6 turns — close
+An implied ~99.4% per-step reliability compounding over 6 turns — close
 to the ceiling this problem's routing rules allow, and a useful contrast
 with `d0_justification.md`'s original `gpt-4o-mini` figure (~94.5%
 per-step, from the earlier single-model result).
@@ -141,9 +139,9 @@ per-step, from the earlier single-model result).
 ## What this means for D6
 
 D6's break-even/Lever-4 comparison is no longer illustrative — it has two
-real, very different data points (`gemini-2.5-flash` at 97.5%/$0.0059 per
-run and `deepseek-v4-flash` at 90.0%/$0.0012 per run, plus three more
-points spanning the full accuracy range down to 35%). See `d6_notes.md`
+real, very different data points (`gemini-2.5-flash` at 96.25%/$0.0059 per
+run and `deepseek-v4-flash` at 91.25%/$0.0012 per run, plus three more
+points spanning the full trial-level range down to 48.75%). See `d6_notes.md`
 for the updated break-even table built from these numbers.
 
 ## Verification

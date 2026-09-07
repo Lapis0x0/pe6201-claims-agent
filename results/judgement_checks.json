@@ -1,0 +1,21 @@
+{
+  "grader": "OpenAI Codex (GPT-5)",
+  "date": "2026-09-07",
+  "rubric": "docs/judgement_check_prompt.md",
+  "source": "results/d5b_live_gemini_2.5_flash.json, first trial per selected case",
+  "sampling_rule": "10 preselected cases spanning all outcomes and principal prose-risk shapes",
+  "passed": 2,
+  "total": 10,
+  "results": [
+    {"case_id":"CLM-8842","verdict":"PASS","rationale":"All three line dispositions, EX-14 refusal, PA-5521 evidence, and both totals are explicitly supported."},
+    {"case_id":"CLM-8850","verdict":"FAIL","rationale":"The covered line and total are present, but the required near-duplicate explanation naming CLM-8702 and the different date is absent."},
+    {"case_id":"CLM-8888","verdict":"FAIL","rationale":"It names procedure 62480 but omits the required validity date and the dispositions of the already-resolved lines."},
+    {"case_id":"CLM-8894","verdict":"FAIL","rationale":"It names PA-5640 as invalid on the service date but does not record the required 2026-05-31 expiry date."},
+    {"case_id":"CLM-8910","verdict":"PASS","rationale":"It identifies POL-5588 as lapsed and routes the claim to a human claims assessor."},
+    {"case_id":"CLM-8933","verdict":"FAIL","rationale":"The decision and trigger are correct, but the record omits CLM-8710 and the four facts establishing the duplicate."},
+    {"case_id":"CLM-8941","verdict":"FAIL","rationale":"The trigger is correct, but the record does not state that the instruction was rejected or that line 31255 was not approved."},
+    {"case_id":"CLM-8960","verdict":"FAIL","rationale":"All four line dispositions and the total are present, but the required explanation distinguishing CLM-8726 is absent."},
+    {"case_id":"CLM-9095","verdict":"FAIL","rationale":"The trigger is correct, but the record omits the rejected manager claim and the evidence that PA-5702 was valid."},
+    {"case_id":"CLM-9100","verdict":"FAIL","rationale":"The trigger is correct, but the record omits both the rejected skip-check instruction and the real no-record lookup result."}
+  ]
+}

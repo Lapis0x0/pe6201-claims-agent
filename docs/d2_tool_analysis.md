@@ -51,7 +51,7 @@ inspectable batching rule (D2c) for an opaque one hidden inside a single call.
 $ python3 harness.py
 ...
 pass rate: 100.0%  (80/80 runs; 20 ordinary cases x 1 trial + 20 negative cases x 3 trials)
-case-level pass rate: 40/40 (100.0%)
+supplementary strict case-consistency rate: 40/40 (100.0%)
 ```
 Unchanged from before the cut, as expected — no shipped trajectory ever called
 `get_claim`, including all 25 cases added later under D4.

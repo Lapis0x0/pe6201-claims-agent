@@ -1,5 +1,10 @@
 # D6 — the cost-to-serve model
 
+The separate completed-task diagnostic (`C_run / p`) is reported in
+`d0_justification.md` and plotted in `../figs/fig_d0_class4_bill_test.png`. This D6
+section uses the Class 5 escalation formula required by the A2 FAQ; the two
+models are not combined.
+
 Uses the Class 5 three-layer model, computed in `d6_cost_model.py` directly
 from this repository's committed result files (`results/d5b_live_*.json`,
 `results/d2b_live_*.json`, `measure_parallel.py`) — every number below is
@@ -27,16 +32,16 @@ model from its own live battery (80 trials each, real OpenRouter usage):
 
 ## Layer 2 — expected fallback cost
 
-`(1 - success_rate) × $7.60`, using each model's real D5(b) case-level
-pass rate:
+`(1 - success_rate) × $7.60`, using the FAQ-defined trial-level pass rate
+(`passing trials / total trials`) from each real D5(b) battery:
 
 | Model | p (measured) | L2 (fallback)/task |
 |---|---|---|
-| gemini-2.5-flash | 97.5% | $0.1900 |
-| deepseek-v4-flash | 90.0% | $0.7600 |
-| gpt-4o-mini | 70.0% | $2.2800 |
-| qwen-2.5-7b-instruct | 50.0% | $3.8000 |
-| llama-3.1-8b-instruct | 35.0% | $4.9400 |
+| gemini-2.5-flash | 77/80 (96.25%) | $0.2850 |
+| deepseek-v4-flash | 73/80 (91.25%) | $0.6650 |
+| gpt-4o-mini | 55/80 (68.75%) | $2.3750 |
+| qwen-2.5-7b-instruct | 41/80 (51.25%) | $3.7050 |
+| llama-3.1-8b-instruct | 39/80 (48.75%) | $3.8950 |
 
 ## Layer 3 — fixed monthly cost, stated assumption
 
@@ -50,18 +55,18 @@ does not fix a figure for this layer.
 
 | Model | Cost/task (L1) | Fallback cost/task (L2) | Total expected cost/task | Monthly @ 8,000 |
 |---|---|---|---|---|
-| **gemini-2.5-flash** | $0.0059 | $0.1900 | **$0.1959** | **$1,572** |
-| deepseek-v4-flash | $0.0012 | $0.7600 | $0.7612 | $6,095 |
-| gpt-4o-mini | $0.0031 | $2.2800 | $2.2831 | $18,270 |
-| qwen-2.5-7b-instruct | $0.0021 | $3.8000 | $3.8021 | $30,421 |
-| llama-3.1-8b-instruct | $0.0010 | $4.9400 | $4.9410 | $39,533 |
+| **gemini-2.5-flash** | $0.0059 | $0.2850 | **$0.2909** | **$2,332** |
+| deepseek-v4-flash | $0.0012 | $0.6650 | $0.6662 | $5,335 |
+| gpt-4o-mini | $0.0031 | $2.3750 | $2.3781 | $19,030 |
+| qwen-2.5-7b-instruct | $0.0021 | $3.7050 | $3.7071 | $29,661 |
+| llama-3.1-8b-instruct | $0.0010 | $3.8950 | $3.8960 | $31,173 |
 
 **This ranking inverts raw token price entirely.** `llama-3.1-8b-instruct`
 is the *cheapest* model by token cost (L1 = $0.00104/run, ~5.7x cheaper
-than `gemini`) and the *most expensive* model overall (~25x `gemini`'s
+than `gemini`) and the *most expensive* model overall (~13.4x `gemini`'s
 total monthly cost), because Layer 2 swamps Layer 1 by two to three orders
 of magnitude for every model except `gemini`. Layer 1 never exceeds
-$0.006/run for any model tested; Layer 2 ranges from $0.19 to $4.94 —
+$0.006/run for any model tested; Layer 2 ranges from $0.285 to $3.895 —
 the entire monthly cost ranking is decided by Layer 2, not Layer 1.
 
 ## The cost ledger — four levers, measured before/after
@@ -70,8 +75,8 @@ the entire monthly cost ranking is decided by Layer 2, not Layer 1.
 |---|---|---|---|---|
 | **1. Tool block size** | `B`, re-sent every turn | 7 tools, stub descriptors: **1,996 tokens** | 6 tools, full descriptors (current): **2,165 tokens** | **+169 tokens/turn, net** — see the split below |
 | **2. Turn count** | The quadratic term | Sequential: **649,111** input tokens over 40 cases | Parallel: **513,037** input tokens over 40 cases | **-136,074 tokens (-21.0%)** |
-| **3. Observation/descriptor size** | Compounds every later turn | v1 `check_coverage` descriptor, live on gpt-4o-mini: **62.5% pass, $0.2362/80 trials** | v2 (current), live: **70.0% pass, $0.2485/80 trials** | **+7.5pp pass rate for +$0.0123 total** — see below |
-| **4. Success rate** | Sets layer 2, the largest layer by far | Weakest measured model (llama, 35%): **$4.94/task, $39,533/mo** | Strongest measured model (gemini, 97.5%): **$0.196/task, $1,572/mo** | **-$37,961/month (-96.0%)** — by far the largest lever |
+| **3. Observation/descriptor size** | Compounds every later turn | v1 `check_coverage`: **60.0% trial pass, $0.2362/80 trials** | v2: **68.75% trial pass, $0.2485/80 trials** | **+8.75pp for +$0.0123 total** — see below |
+| **4. Success rate** | Sets layer 2, the largest layer by far | Weakest trial rate (llama, 48.75%): **$3.896/task, $31,173/mo** | Strongest (gemini, 96.25%): **$0.291/task, $2,332/mo** | **-$28,841/month (-92.5%)** — by far the largest lever |
 
 ### Lever 1, split into its two real causes
 
@@ -99,8 +104,8 @@ paid on every call of every run forever.*
 `d2b_descriptor_rewrite.md` has the full case-by-case account. Headline:
 the vague v1 descriptor costs 118 tokens/turn *less* than v2, but that
 saving is economically invisible ($0.00016/run) next to what it costs in
-accuracy — a 7.5-point drop in case-level pass rate, concentrated in the
-negative cases (40% vs 50%). Folding both layers together: v1's total
+accuracy — an 8.75-point drop in trial-level pass rate, concentrated in the
+negative trials (51.7% vs 61.7%). Folding both layers together: v1's total
 expected cost/task is *higher* than v2's despite its smaller prompt,
 because Layer 2's accuracy loss outweighs Layer 1's token saving by two
 orders of magnitude, the same pattern Lever 4 shows at a larger scale.
@@ -108,21 +113,21 @@ orders of magnitude, the same pattern Lever 4 shows at a larger scale.
 ### Lever 4 — now five real data points, not a sensitivity guess
 
 `d5b_live_battery.md` has the full five-model comparison. The spread here
-is the whole story of this section: p ranges from 35% to 97.5% across
+is the whole story of this section: p ranges from 48.75% to 96.25% across
 models that differ in token price by less than 6x, but in total cost/task
-by **25x**.
+by more than **13x**.
 
 ## Sensitivity analysis
 
-±10 percentage points around `gpt-4o-mini`'s measured p=70.0% (the model
+±10 percentage points around `gpt-4o-mini`'s measured p=68.75% (the model
 used as the baseline throughout D0–D2, so this sensitivity band is the one
 most directly comparable to earlier sections):
 
 | | p | Layer 2 | Cost/success | Monthly (8,000/mo) |
 |---|---|---|---|---|
-| downside | 60.0% (p−10) | $3.0400 | $3.0431 | $24,350 |
-| **measured** | **70.0%** | **$2.2800** | **$2.2831** | **$18,270** |
-| upside | 80.0% (p+10) | $1.5200 | $1.5231 | $12,190 |
+| downside | 58.75% (p−10) | $3.1350 | $3.1381 | $25,110 |
+| **measured** | **68.75%** | **$2.3750** | **$2.3781** | **$19,030** |
+| upside | 78.75% (p+10) | $1.6150 | $1.6181 | $12,950 |
 
 A ±10pp swing in success rate moves the monthly bill by **±$6,080
 (±33%)** around the measured point — this is the same shape the earlier,
@@ -135,7 +140,7 @@ uncertainty band.
 The brief's question, now answerable with real numbers instead of an
 illustrative table: **how accurate would each cheaper model need to
 become to match `gemini-2.5-flash`'s total cost/task** (currently the
-cheapest overall, at $0.1959/task)?
+cheapest overall, at $0.2909/task)?
 
 ```
 break-even p = 1 - (E − C) / failure_cost
@@ -145,16 +150,16 @@ where `E` = gemini's total cost/task, `C` = the cheaper model's own
 
 | Model | Currently at | Needs to reach | Gap |
 |---|---|---|---|
-| deepseek-v4-flash | 90.0% | 97.4% | +7.4pp |
-| gpt-4o-mini | 70.0% | 97.5% | +27.5pp |
-| qwen-2.5-7b-instruct | 50.0% | 97.4% | +47.4pp |
-| llama-3.1-8b-instruct | 35.0% | 97.4% | +62.4pp |
+| deepseek-v4-flash | 91.25% | 96.2% | +4.9pp |
+| gpt-4o-mini | 68.75% | 96.2% | +27.5pp |
+| qwen-2.5-7b-instruct | 51.25% | 96.2% | +44.9pp |
+| llama-3.1-8b-instruct | 48.75% | 96.2% | +47.4pp |
 
 **Reading this**: every model's break-even target lands at essentially the
-same place — **~97.4%, gemini's own measured accuracy** — regardless of
+same place — **~96.2%, gemini's own measured accuracy** — regardless of
 how much cheaper its tokens are. `llama` is 5.7x cheaper than `gemini` by
-token price and would still need to *more than double* its accuracy (35%
-→ 97.4%) to match it economically. This is the brief's own point, now with
+token price and would still need to nearly double its accuracy (48.75%
+→ 96.2%) to match it economically. This is the brief's own point, now with
 five real models instead of an illustrative pair: **because the failure
 cost ($7.60) is 1,000x-plus the per-run token cost of every model tested,
 token price cannot buy its way to a lower total cost — only accuracy can.**
@@ -167,10 +172,10 @@ size) moves the bill by ±169 tokens/turn — worth a fraction of a cent per
 run. Lever 2 (turn count, parallel calling) saves 21% of input tokens —
 real, worth keeping, but Layer 1 was never more than $0.006/run to begin
 with, so 21% of that is still a fraction of a cent. Lever 3 (descriptor
-quality) moves accuracy by 7.5 points for a token cost so small it's
+quality) moves accuracy by 8.75 points for a token cost so small it's
 foldable into Lever 1. Lever 4 alone moves the monthly bill from
-**$1,572 to $39,533** across the five models actually measured — a
-**25x** spread, dwarfing every other lever combined. For a claims-first-
+**$2,332 to $31,173** across the five models actually measured — a
+**13x-plus** spread, dwarfing every other lever combined. For a claims-first-
 response system where a wrong answer costs a human 12 minutes, the
 business lesson from this repository's own measurements is unambiguous:
 **pick the most accurate model you can afford, and treat token price as a

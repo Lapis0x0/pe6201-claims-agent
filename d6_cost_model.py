@@ -44,12 +44,9 @@ RUNS = {
 }
 
 
-def _case_level_pass_rate(rows):
-    by_case = {}
-    for r in rows:
-        by_case.setdefault(r["case_id"], []).append(r)
-    passed = sum(all(r["passed"] for r in rs) for rs in by_case.values())
-    return passed / len(by_case)
+def _trial_level_pass_rate(rows):
+    """FAQ-defined pass rate: passing trials divided by total trials."""
+    return sum(bool(r["passed"]) for r in rows) / len(rows)
 
 
 def measure_run(model, filename):
@@ -59,7 +56,7 @@ def measure_run(model, filename):
     path = os.path.join(RESULTS_DIR, filename)
     rows = json.load(open(path, encoding="utf-8"))
     n = len(rows)
-    p = _case_level_pass_rate(rows)
+    p = _trial_level_pass_rate(rows)
     tin = sum(r.get("prompt_tokens") or 0 for r in rows) / n
     tout = sum(r.get("completion_tokens") or 0 for r in rows) / n
     latency = sum(r.get("runtime_seconds") or 0 for r in rows) / n

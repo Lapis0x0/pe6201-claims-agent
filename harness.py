@@ -224,11 +224,22 @@ def print_d4_summary(rows):
     for row in rows:
         by_case.setdefault(row["case_id"], []).append(row)
 
+    judgement_path = os.path.join(
+        os.path.dirname(__file__), "results", "judgement_checks.json"
+    )
+    judgement_by_case = {}
+    if os.path.exists(judgement_path):
+        with open(judgement_path, encoding="utf-8") as fh:
+            judgement_by_case = {
+                item["case_id"]: item["verdict"]
+                for item in json.load(fh)["results"]
+            }
+
     print("\n=== D4 results table (one row per case, {} trials each on "
           "average) ===".format(round(len(rows) / len(by_case), 1)))
     print("{:<10} {:<30} {:<21} {:<21} {:<28} {:<10} {:<10} {}".format(
         "case", "family", "expected", "actual", "trigger", "code check",
-        "judge", "pass"))
+        "live judge", "code result"))
     print("-" * 145)
     case_passed = 0
     for case_id, case_rows in by_case.items():
@@ -238,12 +249,13 @@ def print_d4_summary(rows):
         print("{:<10} {:<30} {:<21} {:<21} {:<28} {:<10} {:<10} {}".format(
             case_id, one["family"][:30], one["expected"], one["actual"],
             one["actual_trigger"] or "-",
-            "PASS" if all_pass else "FAIL", "not graded",
+            "PASS" if all_pass else "FAIL",
+            judgement_by_case.get(case_id, "not selected"),
             "PASS" if all_pass else "FAIL"))
     print("-" * 145)
-    print("case-level pass rate: {}/{} ({:.1%}) - distinct from the "
-          "trial-level rate above, which counts negative cases' extra "
-          "trials".format(case_passed, len(by_case),
+    print("supplementary strict case-consistency rate: {}/{} ({:.1%}) - "
+          "a negative case counts only if all three trials pass; this is "
+          "not the FAQ-defined primary pass rate above".format(case_passed, len(by_case),
                           case_passed / len(by_case) if by_case else 0.0))
 
     print("\npass rate by family:")

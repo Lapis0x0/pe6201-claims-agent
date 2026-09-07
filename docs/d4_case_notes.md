@@ -99,17 +99,23 @@ What stays a **judgement check**, deliberately: the prose in
 "more information required"?), and every case's `must_record` list — read
 by `harness.py --judgement-sheet`, scored by a person or a second model,
 never by a substring match (Class 4's own demonstration of why a substring
-check can pass for the wrong reason is exactly why this stays manual).
+check can pass for the wrong reason is exactly why this stays semantic).
+Ten representative live cases have now been graded by an independent model:
+2/10 passed. The low rate exposes evidence-detail omissions hidden by the
+fixed-field code checks. The committed rubric, sampling rule, grader identity, date and
+per-case rationales are in `judgement_check_prompt.md`,
+`d4_judgement_checks.md`, and `results/judgement_checks.json`.
 
 ## D4's own results and metrics
 
 `python3 harness.py` now prints, beyond the per-trial pass/fail table:
 
 - a **one-row-per-case** results table (case, family, expected, actual,
-  trigger, code check, judge — "not graded" until a human or second model
-  does that pass, overall pass)
-- **case-level pass rate** (40/40), distinct from the trial-level rate,
-  which counts negative cases' extra trials
+  trigger, code check, and the committed live judgement verdict for the ten
+  selected cases)
+- the FAQ-defined **trial-level pass rate** (80/80)
+- a supplementary strict case-consistency rate (40/40), where every trial
+  for a negative case must pass
 - **pass rate by family** — all 40 families are currently unique (one case
   each), so this doubles as a family checklist
 - **ordinary vs. negative pass rate**, separately (20/20 and 20/20)
@@ -141,11 +147,11 @@ Your data hangs together.
 
 $ python3 harness.py
 pass rate: 100.0%  (80/80 runs; 20 ordinary cases x 1 trial + 20 negative cases x 3 trials)
-case-level pass rate: 40/40 (100.0%)
+supplementary strict case-consistency rate: 40/40 (100.0%)
 turns: median 5, average 4.9, min 3, max 6
 
 $ python3 harness.py --sequential
 pass rate: 100.0%  (80/80 runs; 20 ordinary cases x 1 trial + 20 negative cases x 3 trials)
-case-level pass rate: 40/40 (100.0%)
+supplementary strict case-consistency rate: 40/40 (100.0%)
 turns: median 6, average 5.9, min 3, max 10
 ```
