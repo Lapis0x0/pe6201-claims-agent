@@ -39,10 +39,9 @@ def main():
     run(sys.executable, "failure1_loop.py")
     run(sys.executable, "failure2_interface.py")
     run(sys.executable, "measure_parallel.py")
+    run(sys.executable, "measure_d2b.py")
     run(sys.executable, "d6_cost_model.py")
-    run(sys.executable, "class4_bill_test.py")
-    run(sys.executable, "plot_turn_token_growth.py")
-    run(sys.executable, "plot_legacy_d5b.py")
+    run(sys.executable, "generate_plots.py")
     validate_evidence()
     print("\nALL ZERO-COST SUBMISSION CHECKS PASSED")
 

@@ -31,7 +31,7 @@ backend at every turn (the exact quantity the formula approximates). This is
 more accurate than plugging in an assumed `D`, and it still costs nothing —
 no network, no key.
 
-For a visual sensitivity view, `plot_turn_token_growth.py` uses the measured
+For a visual sensitivity view, `generate_plots.py` uses the measured
 current prefix `B = 2,165` tokens and the median inferred growth from the
 parallel trajectories, `D = 176` tokens/turn. The resulting
 `../figs/fig_d0_turn_token_growth.png` separates the repeated-prefix and

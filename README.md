@@ -57,11 +57,10 @@ lives in `figs/` — both are referenced by path in the table below.
 | `harness.py` | The evaluation harness: runs the set, applies the code check, prints the judgement sheet. |
 | `data_A/`, `expected_outcomes_A.json`, `make_fixtures_A.py`, `check_my_data.py` | The fixture data, the answer key, the generator, and the data checker, as shipped. |
 | `docs/d0_justification.md` | D0: why this problem needs an agent. |
-| `class4_bill_test.py`, `figs/fig_d0_class4_bill_test.png` | D0's completed-task cost test: measured token cost per run and `C_run / p` per completed output, kept separate from D6's escalation model. |
-| `plot_turn_token_growth.py`, `figs/fig_d0_turn_token_growth.png` | Turn-sensitivity plot using measured `B=2,165` and representative `D=176`; doubling turns from 8 to 16 produces 2.51x input tokens. |
+| `generate_plots.py`, `figs/fig_d0_class4_bill_test.png`, `figs/fig_d0_turn_token_growth.png` | One generator for the standalone supplementary figures: completed-task cost, turn sensitivity, and the two historical D5 diagnostics. The primary D2-D7 figures remain in the analysis notebook. |
 | `docs/d1_sample_traces.md` | D1: one trace per outcome (approve/ask/escalate) and a fully instrumented decision record (turns, tool calls, tokens, cost, runtime, guardrails fired, evidence trace). |
 | `docs/d2_tool_analysis.md` | D2(a): the tool set scored against the three questions, and the evidence for cutting `get_claim`. |
-| `docs/d2b_descriptor_rewrite.md`, `descriptors_v1.py` | D2(b): the six-field descriptors, four poka-yoke moves, and the v1-vs-v2 live comparison on `openai/gpt-4o-mini` (68.75% vs 60.0% trial-level). |
+| `docs/d2b_descriptor_rewrite.md`, `descriptors_v1.py`, `measure_d2b.py` | D2(b): the six-field descriptors, four poka-yoke moves, actual observation-return size, the 12/12-vs-12/12 guardrail control, and the v1-vs-v2 live comparison on `openai/gpt-4o-mini` (68.75% vs 60.0% trial-level). |
 | `docs/d4_case_notes.md`, `docs/d4_judgement_checks.md`, `docs/judgement_check_prompt.md` | D4: the 40-case evaluation set, run arithmetic, code checks, and the completed independent live-record judgement check (2/10; evidence-detail gaps documented). |
 | `docs/d2c_measurement.md`, `measure_parallel.py` | D2(c): the dependency rule, and an exact (not approximated) parallel-vs-sequential token measurement over all 40 cases. |
 | `docs/d3a_autonomy.md` | D3(a): the autonomy setting (suggest/confirm/act), made into real enforced behaviour rather than a descriptive label, and why `confirm` is the shipped default. |
@@ -85,10 +84,9 @@ python3 harness.py --sequential     # same trajectories, one action per turn
 python3 harness.py --case CLM-8894 --verbose
 python3 harness.py --judgement-sheet
 python3 agent.py CLM-8842           # one claim, full trace
+python3 measure_d2b.py              # D2(b) zero-cost control measurements
 python3 verify_submission.py         # all zero-cost checks plus evidence validation
-python3 class4_bill_test.py           # reproduce the completed-task cost plot
-python3 plot_turn_token_growth.py     # reproduce the turns-vs-token-growth plot
-python3 plot_legacy_d5b.py            # reproduce the two historical D5 figures
+python3 generate_plots.py             # reproduce all standalone figures
 ```
 
 To run a real model, install `openai` and pass a key:
@@ -106,8 +104,11 @@ python3 check_my_data.py
 
 ## The decision loop
 
-The agent works a claim in a fixed order, and the order is the point: each of
-the first two steps can end the run before any line item is priced.
+The model chooses the next action at runtime from the observations it receives.
+The prompt supplies a dependency rule rather than a fixed workflow: establish
+policy eligibility first, stop early when evidence already decides the case,
+batch independent checks, and never call a dependent tool before its arguments
+have been observed. Typical successful trajectories therefore look like this:
 
 1. `lookup_member_policy` — a lapsed policy, a date of service outside the
    policy window, or a claim total above the remaining limit each escalate
@@ -130,7 +131,9 @@ In code, in `agent.py` and `tools.check_decision_gate`, not in the prompt:
 
 - **Step cap** — `MAX_STEPS` model turns.
 - **Budget ceiling** — `MAX_TOOL_CALLS` tool invocations, checked before they
-  are spent.
+  are spent. This is the resource budget for the action that expands later
+  prompts; combined with `MAX_STEPS` and the backend's output-token cap, it
+  bounds the run while still allowing multi-action turns.
 - **Action de-duplication** — the same tool with the same arguments is refused
   after `MAX_REPEATS` attempts. The records do not change during a run.
 - **Autonomy gate** — the loop will not accept a final answer until

@@ -60,6 +60,38 @@ data (v1 names no `fails_when`, so a bad id's behaviour is unspecified from
 the model's point of view; v2 tells it to expect a `NOT FOUND` string) — to
 be worth the extra 118 tokens every single turn.
 
+### Actual observation-return size: v1 versus v2
+
+The v1 control changed the `check_coverage` descriptor presented to the
+model, not the Python tool implementation. We verified the actual returned
+strings across all **50 fixture-valid policy x procedure lookups**. The
+runtime observation size was therefore deliberately identical in both arms:
+
+| Actual `check_coverage` return | v1 | v2 | Delta |
+|---|---:|---:|---:|
+| Minimum | 103 chars (~26 tokens) | 103 chars (~26 tokens) | 0 |
+| Median | 113 chars (~29 tokens) | 113 chars (~29 tokens) | 0 |
+| Mean | 115.32 chars (~29.32 tokens) | 115.32 chars (~29.32 tokens) | 0 |
+| Maximum | 145 chars (~37 tokens) | 145 chars (~37 tokens) | 0 |
+
+The transparent token estimate is `ceil(characters / 4)`. This null control
+matters: v2's live accuracy change cannot be attributed to receiving shorter
+observations, because both versions received the same bounded return strings.
+It isolates the paid descriptor rewrite as the changed variable. Reproduce
+the result with `python3 measure_d2b.py`.
+
+### Guardrail-pass control
+
+| Scripted checklist | v1 | v2 |
+|---|---:|---:|
+| Guardrail cases passed | **12/12 (100%)** | **12/12 (100%)** |
+
+The checklist scripts attempted violations of the same code-layer controls in
+both arms. Descriptor text cannot disable the step cap, tool-call budget,
+de-duplication or autonomy gate, so unchanged 12/12 performance is the
+expected control result, not evidence that the prompt itself provides those
+guardrails. `measure_d2b.py` re-runs and asserts this comparison at zero cost.
+
 ## The live measurement — done, on `openai/gpt-4o-mini`
 
 **Experimental rule**: model held fixed (`openai/gpt-4o-mini`, matching

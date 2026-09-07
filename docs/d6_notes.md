@@ -17,6 +17,19 @@ v1/v2 pair have real live data.
 - Failure cost: claims assessor at **$38/hour**, **12 minutes** per
   escalated claim = **$7.60**
 
+## The three shipping caps
+
+| Cap | Shipped value | Evidence and behaviour at the boundary |
+|---|---:|---|
+| Step cap | **15 model turns/run** | The 40-case parallel run had median 5 and worst legitimate 6 turns. Fifteen is 2.5x that observed maximum; D7 reproduces a loop that stops loudly at this cap. |
+| Budget ceiling | **24 tool calls/run** | This is an action/resource budget, not a dollar estimate. Tool calls create observations that are appended to history and re-sent on later turns, so limiting calls directly bounds the agent-controlled source of token growth. The loop checks the whole proposed batch before executing it; a batch that would cross 24 is rejected atomically and escalated. Together with the 15-turn cap and the live backend's per-response output cap, it bounds both tool-driven input growth and model output. G2 reproduces the boundary at zero cost. |
+| Monthly limit per user | **US$1.00 per policy member/month** | At the selected `gemini-2.5-flash` baseline of **$0.2909 expected cost/claim**, the cap permits three average claims ($0.8727) and routes a fourth to the existing human process before more AI spend. This is a stated operating-policy assumption; persistent user-account storage is outside A2's file-based prototype. |
+
+`MAX_TOOL_CALLS` is therefore intentionally named the budget ceiling in the
+code: it budgets the scarce action that expands later prompts. It is separate
+from `MAX_STEPS`, fires on a different scripted case, and is checked before
+the calls are spent rather than after the bill has already grown.
+
 ## Layer 1 — AI variable cost
 
 `input_tokens × input_price + output_tokens × output_price`, measured per
@@ -75,7 +88,7 @@ the entire monthly cost ranking is decided by Layer 2, not Layer 1.
 |---|---|---|---|---|
 | **1. Tool block size** | `B`, re-sent every turn | 7 tools, stub descriptors: **1,996 tokens** | 6 tools, full descriptors (current): **2,165 tokens** | **+169 tokens/turn, net** — see the split below |
 | **2. Turn count** | The quadratic term | Sequential: **649,111** input tokens over 40 cases | Parallel: **513,037** input tokens over 40 cases | **-136,074 tokens (-21.0%)** |
-| **3. Observation/descriptor size** | Compounds every later turn | v1 `check_coverage`: **60.0% trial pass, $0.2362/80 trials** | v2: **68.75% trial pass, $0.2485/80 trials** | **+8.75pp for +$0.0123 total** — see below |
+| **3. Observation/descriptor size** | Compounds every later turn | Actual return: **median 113 chars (~29 tokens), max 145 (~37)** | **Identical** in v2; descriptor alone changed | **0 observation-token change**; descriptor cost +118 tokens/turn and trial pass +8.75pp — see below |
 | **4. Success rate** | Sets layer 2, the largest layer by far | Weakest trial rate (llama, 48.75%): **$3.896/task, $31,173/mo** | Strongest (gemini, 96.25%): **$0.291/task, $2,332/mo** | **-$28,841/month (-92.5%)** — by far the largest lever |
 
 ### Lever 1, split into its two real causes
@@ -109,6 +122,14 @@ negative trials (51.7% vs 61.7%). Folding both layers together: v1's total
 expected cost/task is *higher* than v2's despite its smaller prompt,
 because Layer 2's accuracy loss outweighs Layer 1's token saving by two
 orders of magnitude, the same pattern Lever 4 shows at a larger scale.
+
+The actual observation-return control is also measured, not assumed:
+`measure_d2b.py` calls `check_coverage` for all 50 valid fixture combinations.
+Both arms return the same median 113 characters (~29 tokens), mean 115.32
+(~29.32), and maximum 145 (~37), because the tool implementation was held
+fixed. This cleanly separates Lever 3's two components: **observation D did
+not move; descriptor B increased**, and the live accuracy result measures
+whether that larger descriptor earned its repeated cost.
 
 ### Lever 4 — now five real data points, not a sensitivity guess
 

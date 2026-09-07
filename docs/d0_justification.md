@@ -97,7 +97,7 @@ This is a diagnostic for a **retry-until-success** world. D6 correctly uses
 the assignment's Class 5 **escalate-on-failure** world instead:
 `C_run + (1-p) x $7.60`. We report both because they answer different
 questions; we do not add them together. The calculation and
-`../figs/fig_d0_class4_bill_test.png` reproduce with `python3 class4_bill_test.py`.
+`../figs/fig_d0_class4_bill_test.png` reproduces with `python3 generate_plots.py`.
 
 ## D0(c) — What counts as a good run
 

@@ -12,8 +12,8 @@ its descriptor's cost compounds with claim size more than any other tool's.
 v1 (below) is what the descriptor looked like before the D2(b) rewrite in
 config.TOOL_SPECS: vague about what it uniquely answers, no size bound, no
 named failure conditions, and no poka-yoke. v2 is the current entry in
-config.TOOL_SPECS — see d2b_descriptor_rewrite.md for the write-up and the
-(pending) measured comparison.
+config.TOOL_SPECS — see docs/d2b_descriptor_rewrite.md for the completed
+measured comparison.
 
 Usage: `python3 harness.py --live --model <cheap-tier model> --descriptor-version v1`
 swaps this in for check_coverage; `--descriptor-version v2` (the default)

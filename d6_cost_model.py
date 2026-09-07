@@ -13,6 +13,7 @@ Run: python3 d6_cost_model.py
 import json
 import os
 
+import config
 from harness import PRICE_PER_MILLION
 from measure_parallel import measure_all
 
@@ -31,6 +32,14 @@ FAILURE_COST = 38.0 * 12 / 60           # claims assessor, $38/h, 12 min = $7.60
 # measured model, 40 cases x 1 trial. STATED ASSUMPTION, not a measurement;
 # the brief does not fix a figure for this layer.
 LAYER_3_MONTHLY = 5.00
+
+# Operational cap per policy member, stated as required by D6.  At the
+# selected model's measured expected cost ($0.2909/claim), US$1 funds three
+# average claims in a calendar month.  A fourth claim is routed to the normal
+# human process before further AI spend.  This is a cost-model/governance
+# assumption, not a database feature (persistent user accounts are out of
+# scope for A2).
+MONTHLY_PER_USER_SPEND_CAP = 1.00
 
 # The five D5(b) models plus the two D2(b) prompt-version runs, each
 # resolved straight from its committed --json evidence file.
@@ -93,6 +102,13 @@ def break_even_success_rate(cheap_l1_per_run, expensive_success_rate, expensive_
 
 def main():
     measured = {name: measure_run(model, fname) for name, (model, fname) in RUNS.items()}
+
+    print("Shipping caps: {} model turns/run; {} tool calls/run; "
+          "${:.2f}/policy member/month".format(
+              config.MAX_STEPS,
+              config.MAX_TOOL_CALLS,
+              MONTHLY_PER_USER_SPEND_CAP))
+    print()
 
     print("Per-model measured numbers (real, from results/*.json):")
     print("{:<26}{:>8}{:>12}{:>12}{:>10}".format(
