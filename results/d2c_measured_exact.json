@@ -1,0 +1,602 @@
+[
+  {
+    "case_id": "CLM-8842",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 8,
+      "input_chars": 55173,
+      "input_tokens_est": 13793
+    },
+    "sequential": {
+      "turns": 9,
+      "tool_calls": 8,
+      "input_chars": 82690,
+      "input_tokens_est": 20672
+    }
+  },
+  {
+    "case_id": "CLM-8850",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 5,
+      "input_chars": 42335,
+      "input_tokens_est": 10584
+    },
+    "sequential": {
+      "turns": 6,
+      "tool_calls": 5,
+      "input_chars": 50975,
+      "input_tokens_est": 12744
+    }
+  },
+  {
+    "case_id": "CLM-8861",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 7,
+      "input_chars": 53256,
+      "input_tokens_est": 13314
+    },
+    "sequential": {
+      "turns": 8,
+      "tool_calls": 7,
+      "input_chars": 70969,
+      "input_tokens_est": 17742
+    }
+  },
+  {
+    "case_id": "CLM-8874",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 5,
+      "input_chars": 42618,
+      "input_tokens_est": 10654
+    },
+    "sequential": {
+      "turns": 6,
+      "tool_calls": 5,
+      "input_chars": 51344,
+      "input_tokens_est": 12836
+    }
+  },
+  {
+    "case_id": "CLM-8888",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 8,
+      "input_chars": 54617,
+      "input_tokens_est": 13654
+    },
+    "sequential": {
+      "turns": 9,
+      "tool_calls": 8,
+      "input_chars": 81936,
+      "input_tokens_est": 20484
+    }
+  },
+  {
+    "case_id": "CLM-8894",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 6,
+      "input_chars": 52435,
+      "input_tokens_est": 13109
+    },
+    "sequential": {
+      "turns": 7,
+      "tool_calls": 6,
+      "input_chars": 61162,
+      "input_tokens_est": 15290
+    }
+  },
+  {
+    "case_id": "CLM-8901",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 5,
+      "input_chars": 41979,
+      "input_tokens_est": 10495
+    },
+    "sequential": {
+      "turns": 6,
+      "tool_calls": 5,
+      "input_chars": 50604,
+      "input_tokens_est": 12651
+    }
+  },
+  {
+    "case_id": "CLM-8910",
+    "parallel": {
+      "turns": 3,
+      "tool_calls": 2,
+      "input_chars": 24043,
+      "input_tokens_est": 6011
+    },
+    "sequential": {
+      "turns": 3,
+      "tool_calls": 2,
+      "input_chars": 24043,
+      "input_tokens_est": 6011
+    }
+  },
+  {
+    "case_id": "CLM-8917",
+    "parallel": {
+      "turns": 3,
+      "tool_calls": 2,
+      "input_chars": 23863,
+      "input_tokens_est": 5966
+    },
+    "sequential": {
+      "turns": 3,
+      "tool_calls": 2,
+      "input_chars": 23863,
+      "input_tokens_est": 5966
+    }
+  },
+  {
+    "case_id": "CLM-8925",
+    "parallel": {
+      "turns": 3,
+      "tool_calls": 2,
+      "input_chars": 24338,
+      "input_tokens_est": 6084
+    },
+    "sequential": {
+      "turns": 3,
+      "tool_calls": 2,
+      "input_chars": 24338,
+      "input_tokens_est": 6084
+    }
+  },
+  {
+    "case_id": "CLM-8933",
+    "parallel": {
+      "turns": 4,
+      "tool_calls": 3,
+      "input_chars": 33221,
+      "input_tokens_est": 8305
+    },
+    "sequential": {
+      "turns": 4,
+      "tool_calls": 3,
+      "input_chars": 33221,
+      "input_tokens_est": 8305
+    }
+  },
+  {
+    "case_id": "CLM-8941",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 5,
+      "input_chars": 42984,
+      "input_tokens_est": 10746
+    },
+    "sequential": {
+      "turns": 6,
+      "tool_calls": 5,
+      "input_chars": 51755,
+      "input_tokens_est": 12939
+    }
+  },
+  {
+    "case_id": "CLM-8952",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 5,
+      "input_chars": 43024,
+      "input_tokens_est": 10756
+    },
+    "sequential": {
+      "turns": 6,
+      "tool_calls": 5,
+      "input_chars": 51788,
+      "input_tokens_est": 12947
+    }
+  },
+  {
+    "case_id": "CLM-8960",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 8,
+      "input_chars": 44792,
+      "input_tokens_est": 11198
+    },
+    "sequential": {
+      "turns": 9,
+      "tool_calls": 8,
+      "input_chars": 81564,
+      "input_tokens_est": 20391
+    }
+  },
+  {
+    "case_id": "CLM-8971",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 5,
+      "input_chars": 42288,
+      "input_tokens_est": 10572
+    },
+    "sequential": {
+      "turns": 6,
+      "tool_calls": 5,
+      "input_chars": 50941,
+      "input_tokens_est": 12735
+    }
+  },
+  {
+    "case_id": "CLM-8980",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 6,
+      "input_chars": 43131,
+      "input_tokens_est": 10783
+    },
+    "sequential": {
+      "turns": 7,
+      "tool_calls": 6,
+      "input_chars": 60857,
+      "input_tokens_est": 15214
+    }
+  },
+  {
+    "case_id": "CLM-8985",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 7,
+      "input_chars": 53695,
+      "input_tokens_est": 13424
+    },
+    "sequential": {
+      "turns": 8,
+      "tool_calls": 7,
+      "input_chars": 71584,
+      "input_tokens_est": 17896
+    }
+  },
+  {
+    "case_id": "CLM-8990",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 6,
+      "input_chars": 43273,
+      "input_tokens_est": 10818
+    },
+    "sequential": {
+      "turns": 7,
+      "tool_calls": 6,
+      "input_chars": 61031,
+      "input_tokens_est": 15258
+    }
+  },
+  {
+    "case_id": "CLM-8995",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 6,
+      "input_chars": 43322,
+      "input_tokens_est": 10830
+    },
+    "sequential": {
+      "turns": 7,
+      "tool_calls": 6,
+      "input_chars": 61090,
+      "input_tokens_est": 15272
+    }
+  },
+  {
+    "case_id": "CLM-9000",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 9,
+      "input_chars": 45866,
+      "input_tokens_est": 11466
+    },
+    "sequential": {
+      "turns": 10,
+      "tool_calls": 9,
+      "input_chars": 93244,
+      "input_tokens_est": 23311
+    }
+  },
+  {
+    "case_id": "CLM-9005",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 6,
+      "input_chars": 52584,
+      "input_tokens_est": 13146
+    },
+    "sequential": {
+      "turns": 7,
+      "tool_calls": 6,
+      "input_chars": 61347,
+      "input_tokens_est": 15337
+    }
+  },
+  {
+    "case_id": "CLM-9010",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 6,
+      "input_chars": 52534,
+      "input_tokens_est": 13134
+    },
+    "sequential": {
+      "turns": 7,
+      "tool_calls": 6,
+      "input_chars": 61288,
+      "input_tokens_est": 15322
+    }
+  },
+  {
+    "case_id": "CLM-9015",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 5,
+      "input_chars": 42200,
+      "input_tokens_est": 10550
+    },
+    "sequential": {
+      "turns": 6,
+      "tool_calls": 5,
+      "input_chars": 50836,
+      "input_tokens_est": 12709
+    }
+  },
+  {
+    "case_id": "CLM-9020",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 6,
+      "input_chars": 52155,
+      "input_tokens_est": 13039
+    },
+    "sequential": {
+      "turns": 7,
+      "tool_calls": 6,
+      "input_chars": 60835,
+      "input_tokens_est": 15209
+    }
+  },
+  {
+    "case_id": "CLM-9025",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 5,
+      "input_chars": 42178,
+      "input_tokens_est": 10544
+    },
+    "sequential": {
+      "turns": 6,
+      "tool_calls": 5,
+      "input_chars": 50832,
+      "input_tokens_est": 12708
+    }
+  },
+  {
+    "case_id": "CLM-9030",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 6,
+      "input_chars": 52293,
+      "input_tokens_est": 13073
+    },
+    "sequential": {
+      "turns": 7,
+      "tool_calls": 6,
+      "input_chars": 61005,
+      "input_tokens_est": 15251
+    }
+  },
+  {
+    "case_id": "CLM-9035",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 7,
+      "input_chars": 53589,
+      "input_tokens_est": 13397
+    },
+    "sequential": {
+      "turns": 8,
+      "tool_calls": 7,
+      "input_chars": 71440,
+      "input_tokens_est": 17860
+    }
+  },
+  {
+    "case_id": "CLM-9040",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 5,
+      "input_chars": 42370,
+      "input_tokens_est": 10592
+    },
+    "sequential": {
+      "turns": 6,
+      "tool_calls": 5,
+      "input_chars": 51050,
+      "input_tokens_est": 12762
+    }
+  },
+  {
+    "case_id": "CLM-9045",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 8,
+      "input_chars": 44700,
+      "input_tokens_est": 11175
+    },
+    "sequential": {
+      "turns": 9,
+      "tool_calls": 8,
+      "input_chars": 81598,
+      "input_tokens_est": 20400
+    }
+  },
+  {
+    "case_id": "CLM-9050",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 6,
+      "input_chars": 52107,
+      "input_tokens_est": 13027
+    },
+    "sequential": {
+      "turns": 7,
+      "tool_calls": 6,
+      "input_chars": 60826,
+      "input_tokens_est": 15206
+    }
+  },
+  {
+    "case_id": "CLM-9055",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 6,
+      "input_chars": 52515,
+      "input_tokens_est": 13129
+    },
+    "sequential": {
+      "turns": 7,
+      "tool_calls": 6,
+      "input_chars": 61268,
+      "input_tokens_est": 15317
+    }
+  },
+  {
+    "case_id": "CLM-9060",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 6,
+      "input_chars": 51966,
+      "input_tokens_est": 12992
+    },
+    "sequential": {
+      "turns": 7,
+      "tool_calls": 6,
+      "input_chars": 60647,
+      "input_tokens_est": 15162
+    }
+  },
+  {
+    "case_id": "CLM-9065",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 6,
+      "input_chars": 52026,
+      "input_tokens_est": 13006
+    },
+    "sequential": {
+      "turns": 7,
+      "tool_calls": 6,
+      "input_chars": 60748,
+      "input_tokens_est": 15187
+    }
+  },
+  {
+    "case_id": "CLM-9070",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 5,
+      "input_chars": 42129,
+      "input_tokens_est": 10532
+    },
+    "sequential": {
+      "turns": 6,
+      "tool_calls": 5,
+      "input_chars": 50790,
+      "input_tokens_est": 12698
+    }
+  },
+  {
+    "case_id": "CLM-9075",
+    "parallel": {
+      "turns": 3,
+      "tool_calls": 2,
+      "input_chars": 23938,
+      "input_tokens_est": 5984
+    },
+    "sequential": {
+      "turns": 3,
+      "tool_calls": 2,
+      "input_chars": 23938,
+      "input_tokens_est": 5984
+    }
+  },
+  {
+    "case_id": "CLM-9080",
+    "parallel": {
+      "turns": 3,
+      "tool_calls": 2,
+      "input_chars": 23814,
+      "input_tokens_est": 5954
+    },
+    "sequential": {
+      "turns": 3,
+      "tool_calls": 2,
+      "input_chars": 23814,
+      "input_tokens_est": 5954
+    }
+  },
+  {
+    "case_id": "CLM-9085",
+    "parallel": {
+      "turns": 3,
+      "tool_calls": 2,
+      "input_chars": 23989,
+      "input_tokens_est": 5997
+    },
+    "sequential": {
+      "turns": 3,
+      "tool_calls": 2,
+      "input_chars": 23989,
+      "input_tokens_est": 5997
+    }
+  },
+  {
+    "case_id": "CLM-9090",
+    "parallel": {
+      "turns": 4,
+      "tool_calls": 3,
+      "input_chars": 32868,
+      "input_tokens_est": 8217
+    },
+    "sequential": {
+      "turns": 4,
+      "tool_calls": 3,
+      "input_chars": 32868,
+      "input_tokens_est": 8217
+    }
+  },
+  {
+    "case_id": "CLM-9095",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 6,
+      "input_chars": 52823,
+      "input_tokens_est": 13206
+    },
+    "sequential": {
+      "turns": 7,
+      "tool_calls": 6,
+      "input_chars": 61585,
+      "input_tokens_est": 15396
+    }
+  },
+  {
+    "case_id": "CLM-9100",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 6,
+      "input_chars": 52867,
+      "input_tokens_est": 13217
+    },
+    "sequential": {
+      "turns": 7,
+      "tool_calls": 6,
+      "input_chars": 61670,
+      "input_tokens_est": 15418
+    }
+  }
+]
