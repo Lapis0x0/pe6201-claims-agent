@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PE6201 A2 Report — Team B-9</title>
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 18mm 22mm 18mm;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Georgia", "Times New Roman", serif;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: #1a1a1a;
+    background: #fff;
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 18mm 18mm;
+  }
+
+  /* NTU colours */
+  :root {
+    --ntu-red: #C8102E;
+    --ntu-dark: #1B2A4A;
+    --table-header: #1B2A4A;
+    --table-alt: #f4f6f9;
+    --accent: #C8102E;
+    --border: #d0d4dc;
+    --caption: #555;
+  }
+
+  /* Header block */
+  .report-header {
+    text-align: center;
+    padding-bottom: 14pt;
+    margin-bottom: 18pt;
+    border-bottom: 2.5pt solid var(--ntu-red);
+  }
+  .report-header .course {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 9pt;
+    letter-spacing: 0.8pt;
+    text-transform: uppercase;
+    color: #666;
+    margin-bottom: 6pt;
+  }
+  .report-header h1 {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 19pt;
+    font-weight: 700;
+    color: var(--ntu-dark);
+    margin-bottom: 6pt;
+    letter-spacing: -0.2pt;
+  }
+  .report-header .meta {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 9.5pt;
+    color: #555;
+  }
+
+  /* Sections */
+  h2 {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 13pt;
+    font-weight: 700;
+    color: var(--ntu-dark);
+    margin-top: 22pt;
+    margin-bottom: 8pt;
+    padding-bottom: 3pt;
+    border-bottom: 1.5pt solid var(--ntu-red);
+    page-break-after: avoid;
+  }
+
+  p {
+    margin-bottom: 7pt;
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  strong { color: #111; }
+
+  /* Tables */
+  .table-wrap {
+    margin: 10pt 0 12pt 0;
+    page-break-inside: avoid;
+  }
+  .table-title {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 9pt;
+    font-weight: 700;
+    color: var(--ntu-dark);
+    margin-bottom: 4pt;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 8.8pt;
+    line-height: 1.4;
+  }
+  thead th {
+    background: var(--table-header);
+    color: #fff;
+    font-weight: 600;
+    padding: 5pt 6pt;
+    text-align: left;
+    border: none;
+  }
+  thead th:first-child { border-radius: 3pt 0 0 0; }
+  thead th:last-child { border-radius: 0 3pt 0 0; }
+  tbody td {
+    padding: 4pt 6pt;
+    border-bottom: 0.5pt solid var(--border);
+    vertical-align: top;
+  }
+  tbody tr:nth-child(even) { background: var(--table-alt); }
+  tbody tr:last-child td { border-bottom: 1.5pt solid var(--table-header); }
+  td.num, th.num { text-align: right; }
+  .highlight-row td { background: #e8f0e8; font-weight: 600; }
+
+  /* Figures */
+  .figure {
+    margin: 10pt 0 14pt 0;
+    text-align: center;
+    page-break-inside: avoid;
+  }
+  .figure img {
+    max-width: 100%;
+    height: auto;
+    border: 0.5pt solid #ddd;
+    border-radius: 2pt;
+  }
+  .figure.half {
+    display: inline-block;
+    width: 48%;
+    vertical-align: top;
+    margin: 6pt 0.8%;
+  }
+  .figure.half img { max-width: 100%; }
+  .fig-row {
+    text-align: center;
+    margin: 10pt 0 14pt 0;
+    page-break-inside: avoid;
+  }
+  figcaption, .caption {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 8.5pt;
+    color: var(--caption);
+    margin-top: 4pt;
+    font-style: italic;
+  }
+
+  /* Print tweaks */
+  @media print {
+    body { padding: 0; max-width: none; }
+    .page-break { page-break-before: always; }
+    h2 { page-break-after: avoid; }
+    .table-wrap, .figure, .fig-row { page-break-inside: avoid; }
+  }
+
+  /* Footer */
+  .report-footer {
+    margin-top: 20pt;
+    padding-top: 8pt;
+    border-top: 1pt solid var(--border);
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 8pt;
+    color: #888;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<div class="report-header">
+  <div class="course">PE6201 · Emerging AI Technologies · Assignment 2</div>
+  <h1>Health Insurance Claim First-Response Agent</h1>
+  <div class="meta">Team B-9 · Section B · Applied AI System (Problem A)</div>
+</div>
+
+<!-- ============ SECTION 1 ============ -->
+<h2>1. Why an Agent</h2>
+
+<p>Our system addresses Problem A: health-insurance claim first response. Given a claim containing member details, hospital, service date, and line items, the agent must approve in principle, request a specific missing document, or escalate to a human assessor by querying local fixture records. The gated action, <code>issue_decision_letter</code>, simulates an irreversible business write. We place this system on rung 7 of the Class 4 ladder: a single-agent ReAct loop. Table 1 shows why each lower rung is insufficient.</p>
+
+<div class="table-wrap">
+  <div class="table-title">Table 1. Ladder placement</div>
+  <table>
+    <thead><tr><th>Rung</th><th>Verdict</th><th>Why it fails on Problem A</th></tr></thead>
+    <tbody>
+      <tr><td>1. Single call</td><td>Fails</td><td>The claim alone carries no policy status, coverage, pre-authorisation validity, hospital panel status, or remaining annual limit.</td></tr>
+      <tr><td>2. Prompt chain</td><td>Fails</td><td>Check order depends on what earlier checks return: a lapsed policy skips line pricing entirely; a line needing pre-authorisation triggers a lookup the others never do.</td></tr>
+      <tr><td>3. Routing</td><td>Fails</td><td>A single upfront lane cannot self-correct when a later tool result changes the correct path.</td></tr>
+      <tr><td>4. Parallelisation</td><td>Partial</td><td>Batching saves 21.0% of input tokens (measured, Section 2) but cannot decide a new query is needed after seeing an observation.</td></tr>
+      <tr><td>5. Orchestrator-workers</td><td>Overkill</td><td>Adds coordination for a task that is one linear sequence of gated checks, not an unpredictable fan-out.</td></tr>
+      <tr><td>6. Evaluator-optimiser</td><td>N/A</td><td>No draft-then-critique shape: the routing rule is deterministic once the facts are known.</td></tr>
+      <tr class="highlight-row"><td><strong>7. Agent</strong></td><td><strong>Yes</strong></td><td>The model decides at runtime which check to run next based on what the last one returned.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>The case rests on runtime adaptivity. A lapsed-policy claim (CLM-8910) finishes in 3 turns with 2 tool calls because no line is ever priced. A five-line claim (CLM-9000) runs 5 turns with 9 tool calls, batching five independent <code>check_coverage</code> calls into one turn. A pre-authorisation chase (CLM-8888) takes 6 turns and 8 tool calls because <code>get_preauthorisation</code> fires only after <code>check_coverage</code> flags a specific line. Across our 40-case evaluation set, turn count ranges from 3 to 6 under parallel calling, with a median of 5 (Fig. 1). No fixed chain or routing model can reproduce these variable-length, observation-dependent paths without enumerating every combination of line count, pre-authorisation requirement, and early-exit trigger.</p>
+
+<div class="figure">
+  <img src="fig_d4_distribution.png" alt="Turn and tool-call distribution across 40 cases">
+  <figcaption>Figure 1. Turn and tool-call distribution across 40 cases.</figcaption>
+</div>
+
+<p><strong>Ground-truth test.</strong> Problem A has fast, objective sources of truth: policy status, coverage records, pre-authorisation validity, hospital panel status, and remaining annual limit. Each lookup returns machine-checkable evidence within seconds. If the task depended on slow or subjective feedback, a fixed workflow with a human gate would replace unsupervised autonomy.</p>
+
+<p><strong>Arithmetic test.</strong> Using D5(b)'s measured numbers for gpt-4o-mini (the baseline model throughout D0 through D2): case-level pass rate P = 0.70, average turns T = 7.5, per-step reliability s = P<sup>1/T</sup> ≈ 0.953. An implied 95.3% per-step rate compounding over 7.5 turns produces the measured 70% run success. Grouping failures by preceding step identifies two specific weak points (narrative-injection classification and annual-limit comparison) rather than generally unreliable agency. The dominant problem is step quality on identifiable steps, not step count.</p>
+
+<p><strong>Bill test.</strong> The Class 4 bill test asks whether the value of one completed task exceeds B×T + D×T<sup>2</sup>/2 (the quadratic token cost of a stateless loop), divided by the success rate. Section 4 answers this with measured per-model tokens rather than the formula's approximation: even the most expensive model (gemini, $0.20/task including fallback) is far below the $7.60 human-assessor cost it displaces.</p>
+
+<p><strong>Success criteria.</strong> A run is good when: (1) the outcome traces to the relevant claim, policy, procedure, hospital, and pre-authorisation records; (2) the decision follows Problem A's routing rules, including partial payment and excluded lines; (3) the gated action executes at most once, only after the autonomy gate; (4) when records are insufficient, the agent names the missing document or escalates rather than inventing an answer; (5) the run records its evidence trail, turn count, and cost within configured caps.</p>
+
+
+<!-- ============ SECTION 2 ============ -->
+<h2>2. The Tool Layer</h2>
+
+<p><strong>Tool audit.</strong> We scored all seven candidate tools against three questions: does a task fail without it, could the model confuse it with a neighbour, and what does it cost when never called. <code>get_claim</code> was the only tool that failed all three: the full claim is already in the first user message via <code>format_claim_prompt()</code>, zero of 15 shipped trajectories ever called it, and its six-field descriptor occupied prompt space on every turn of every run. Removing it shrank the prompt prefix by 96 tokens/turn and left the harness at 40/40 after the cut. We also considered widening <code>check_coverage</code> to accept a list of procedure codes, but rejected this: parallel calling (below) already collapses independent per-line calls into one turn without losing the per-line disposition trail the decision letter requires. The closest call was <code>check_hospital</code>: panel status never changes the decision, but the task statement requires it be recorded in every case.</p>
+
+<p><strong>Descriptor rewrite (v1 to v2).</strong> We rewrote <code>check_coverage</code>'s descriptor from a vague v1 (untyped signature, "coverage details for the procedure" as its entire returns field) to a six-field v2: typed signature, a <code>what</code> one-liner naming what it uniquely answers, a measured size bound on the return (145 chars / ~36 tokens over all policy-procedure pairs), and an explicit <code>fails_when</code> clause. Table 2 shows the live results.</p>
+
+<div class="table-wrap">
+  <div class="table-title">Table 2. Descriptor v1 vs v2, live on gpt-4o-mini, 80 trials each</div>
+  <table>
+    <thead><tr><th>Metric</th><th>v1 (vague)</th><th>v2 (six-field)</th><th>Delta</th></tr></thead>
+    <tbody>
+      <tr><td>Case-level pass rate</td><td>25/40 (62.5%)</td><td>28/40 (70.0%)</td><td><strong>+7.5pp</strong></td></tr>
+      <tr><td>Ordinary pass rate</td><td>17/20 (85.0%)</td><td>18/20 (90.0%)</td><td>+5.0pp</td></tr>
+      <tr><td>Negative pass rate</td><td>8/20 (40.0%)</td><td>10/20 (50.0%)</td><td>+10.0pp</td></tr>
+      <tr><td>Descriptor size</td><td>~34 tokens</td><td>~152 tokens</td><td>+118 tokens/turn</td></tr>
+      <tr><td>Total cost (80 trials)</td><td>$0.2362</td><td>$0.2485</td><td>+$0.0123</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>The 7.5pp gain is concentrated in negative cases (+10pp vs +5pp for ordinary), consistent with the hypothesis that a vague descriptor mainly hurts harder decisions. The cost increase translates to $0.00016/run, economically invisible next to the accuracy gain it buys.</p>
+
+<div class="fig-row">
+  <div class="figure half">
+    <img src="fig_d2b_v1_v2.png" alt="Descriptor v1 vs v2 text comparison">
+    <figcaption>Figure 2. Descriptor v1 vs v2 text comparison.</figcaption>
+  </div>
+  <div class="figure half">
+    <img src="fig_d2b_live_v1_v2.png" alt="v1 vs v2 live pass rates">
+    <figcaption>Figure 3. v1 vs v2 live pass rates by case category.</figcaption>
+  </div>
+</div>
+
+<p><strong>Poka-yoke.</strong> Four interface-level constraints on three tools make specific error classes structurally impossible (Table 3). All four are enforced at runtime by the gate, costing zero prompt tokens. This embodies a key design principle: an interface constraint is paid once and holds; a prompt instruction is re-billed on every turn of every run.</p>
+
+<div class="table-wrap">
+  <div class="table-title">Table 3. Poka-yoke moves (zero prompt-token cost)</div>
+  <table>
+    <thead><tr><th>Tool</th><th>What the constraint prevents</th></tr></thead>
+    <tbody>
+      <tr><td><code>get_preauthorisation</code>: <code>date_of_service</code> made required</td><td>Checking existence without also checking validity on the claim's service date.</td></tr>
+      <tr><td><code>check_duplicate</code>: all four match fields required, no defaults</td><td>A match silently loosening because one fact was omitted.</td></tr>
+      <tr><td><code>issue_decision_letter</code>: <code>decision</code> checked against a closed 3-value set</td><td>A typo or invented decision being written as a fourth, unrecognised outcome.</td></tr>
+      <tr><td><code>issue_decision_letter</code>: gate requires structured fields per decision type</td><td>An approval that names no reason or is silent about one of the claim's lines.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p><strong>Parallel calling.</strong> The dependency rule: <code>lookup_member_policy</code> runs first (three business triggers can end the run here), <code>check_duplicate</code> runs second, then <code>check_hospital</code> plus all per-line <code>check_coverage</code> calls batch into one turn, then any <code>get_preauthorisation</code> calls that step 3 flagged, and finally the gated action. This batches only calls whose need is already known; the one real dependency chain in Problem A (<code>check_coverage</code> must precede <code>get_preauthorisation</code>) is respected.</p>
+
+<div class="table-wrap">
+  <div class="table-title">Table 4. Sequential vs parallel calling, 40 cases, scripted backend</div>
+  <table>
+    <thead><tr><th>Metric</th><th>Sequential</th><th>Parallel</th><th>Saved</th></tr></thead>
+    <tbody>
+      <tr><td>Turns (sum)</td><td>254</td><td>202</td><td>52 (20.5%)</td></tr>
+      <tr><td>Tool calls (sum)</td><td>214</td><td>214</td><td>0 (same trajectories)</td></tr>
+      <tr><td>Input tokens</td><td>649,111</td><td>513,037</td><td><strong>136,074 (21.0%)</strong></td></tr>
+      <tr><td>Pass rate</td><td>40/40</td><td>40/40</td><td>unchanged</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>The saving comes entirely from reduced re-sent message history; no tool call is added or removed. Per-case savings range from 0% (early-exit cases with nothing to batch) to 51% (CLM-9000, five lines). Two honest limits: parallel calls can raise cost when a batched call proves unnecessary (none of our cases hit this), and batching removes a decision point, since the model never sees line 1's result before committing to check line 2.</p>
+
+<div class="fig-row">
+  <div class="figure half">
+    <img src="fig_d2c_per_case.png" alt="Per-case token savings from parallel calling">
+    <figcaption>Figure 4. Per-case token savings from parallel calling.</figcaption>
+  </div>
+  <div class="figure half">
+    <img src="fig_d2ab_prompt_size.png" alt="Prompt size before and after tool-layer changes">
+    <figcaption>Figure 5. Prompt size before and after tool-layer changes.</figcaption>
+  </div>
+</div>
+
+
+<!-- ============ SECTION 3 ============ -->
+<h2>3. What the Evidence Showed</h2>
+
+<p><strong>Evaluation set.</strong> Forty cases (20 ordinary, 20 negative) graded by code checks against a fixed answer key. The 20/40 negative ratio is deliberate: this problem's routing rules have high edge-case density (boundary dates, near-limit claims, three pre-authorisation failure shapes, hostile narratives), and the evaluation set's job is to separate a careful agent from a plausible-looking one, not to mimic the production claim distribution. Ordinary cases receive 1 trial per model; negative cases receive 3, yielding 80 trials per model.</p>
+
+<p><strong>Scripted baseline.</strong> The scripted backend replays fixed trajectories with no model, no network, and no cost. Pass rate: 80/80 (100%), case-level: 40/40. Two independent runs produce identical results on every field except wall-clock timing, confirming deterministic reproducibility.</p>
+
+<p><strong>Live model battery.</strong> Five models from five distinct families, spanning a 31x range in completion pricing, run against the same prompt and evaluation set. Only the model string changes between runs (Table 5).</p>
+
+<div class="table-wrap">
+  <div class="table-title">Table 5. Live battery results, 80 trials per model</div>
+  <table>
+    <thead><tr><th>Model</th><th>Case pass</th><th>Ordinary</th><th>Negative</th><th>Cost / 80 trials</th><th>Avg turns</th><th>Avg latency</th></tr></thead>
+    <tbody>
+      <tr class="highlight-row"><td>gemini-2.5-flash</td><td><strong>39/40 (97.5%)</strong></td><td>20/20 (100%)</td><td>19/20 (95%)</td><td>$0.4725</td><td>5.7</td><td>7.2s</td></tr>
+      <tr><td>deepseek-v4-flash</td><td>36/40 (90.0%)</td><td>20/20 (100%)</td><td>16/20 (80%)</td><td>$0.0963</td><td>5.2</td><td>22.5s</td></tr>
+      <tr><td>gpt-4o-mini</td><td>28/40 (70.0%)</td><td>18/20 (90%)</td><td>10/20 (50%)</td><td>$0.2485</td><td>7.5</td><td>11.9s</td></tr>
+      <tr><td>qwen-2.5-7b-instruct</td><td>20/40 (50.0%)</td><td>15/20 (75%)</td><td>5/20 (25%)</td><td>$0.1643</td><td>7.2</td><td>21.2s</td></tr>
+      <tr><td>llama-3.1-8b-instruct</td><td>14/40 (35.0%)</td><td>9/20 (45%)</td><td>5/20 (25%)</td><td>$0.0835</td><td>6.7</td><td>69.8s</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Three findings emerge. First, accuracy and cost do not move together: deepseek-v4-flash beats gpt-4o-mini on both accuracy (90.0% vs 70.0%) and cost ($0.0963 vs $0.2485 per 80 trials) simultaneously. Second, negative cases are where models separate. Every model's ordinary pass rate exceeds its negative pass rate, and the gap widens as overall accuracy drops (gemini: 5pp; llama: 20pp). Third, one injection family (<code>prompt_injection_imitating_tool_output</code>, where the narrative imitates a tool observation's format) fools all five models including gemini at 97.5%. Every other hostile-narrative shape is caught by at least the two strongest models, pointing to a specific, nameable gap in the current prompt.</p>
+
+<div class="fig-row">
+  <div class="figure half">
+    <img src="fig_d5b_pass_rate.png" alt="Pass rates across five models">
+    <figcaption>Figure 6. Pass rates across five models.</figcaption>
+  </div>
+  <div class="figure half">
+    <img src="fig_d5b_cost_latency_accuracy.png" alt="Cost, latency, and accuracy">
+    <figcaption>Figure 7. Cost, latency, and accuracy comparison.</figcaption>
+  </div>
+</div>
+
+<div class="fig-row">
+  <div class="figure half">
+    <img src="fig_d5b_before_after.png" alt="Before and after comparison across models">
+    <figcaption>Figure 8. Before and after comparison across models.</figcaption>
+  </div>
+  <div class="figure half">
+    <img src="fig_d5b_failure_reasons.png" alt="Failure distribution by case family">
+    <figcaption>Figure 9. Failure distribution by case family.</figcaption>
+  </div>
+</div>
+
+<p>Both small open models (llama and qwen) exhibited a distinct failure mode: correct individual line dispositions but inconsistent <code>approved_total</code>/<code>refused_total</code> arithmetic. This is a business-logic error that code-level guardrails do not catch, because it occurs in the model's arithmetic reasoning rather than in any tool call or gate violation the harness intercepts. Reliability arithmetic on the best model: gemini at P = 0.975, T = 5.7 gives s ≈ 0.9955, an implied 99.5% per-step reliability, close to the ceiling this problem's routing rules allow and a useful contrast with gpt-4o-mini's 95.3% from Section 1.</p>
+
+
+<!-- ============ SECTION 4 ============ -->
+<h2>4. What It Costs</h2>
+
+<p>We apply the Class 5 three-layer model using measured data from D5(b). Problem A's given inputs: 8,000 claims/month, failure cost $7.60 (assessor at $38/hour, 12 minutes per escalated claim). Layer 3 (fixed monthly) is a stated assumption of $5.00/month for regression monitoring. Table 6 shows all three layers for each model.</p>
+
+<div class="table-wrap">
+  <div class="table-title">Table 6. Three-layer cost, all five models, ranked by total cost per task</div>
+  <table>
+    <thead><tr><th>Model</th><th>L1 (AI variable) / run</th><th>L2 (fallback) / task</th><th>Total / task</th><th>Monthly @ 8,000</th></tr></thead>
+    <tbody>
+      <tr class="highlight-row"><td><strong>gemini-2.5-flash</strong></td><td>$0.0059</td><td>$0.1900</td><td><strong>$0.1959</strong></td><td><strong>$1,572</strong></td></tr>
+      <tr><td>deepseek-v4-flash</td><td>$0.0012</td><td>$0.7600</td><td>$0.7612</td><td>$6,095</td></tr>
+      <tr><td>gpt-4o-mini</td><td>$0.0031</td><td>$2.2800</td><td>$2.2831</td><td>$18,270</td></tr>
+      <tr><td>qwen-2.5-7b-instruct</td><td>$0.0021</td><td>$3.8000</td><td>$3.8021</td><td>$30,421</td></tr>
+      <tr><td>llama-3.1-8b-instruct</td><td>$0.0010</td><td>$4.9400</td><td>$4.9410</td><td>$39,533</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>This ranking inverts raw token price entirely. llama has the lowest Layer 1 cost ($0.0010/run, 5.7x cheaper than gemini) and the highest total monthly cost ($39,533, 25x gemini). Layer 1 never exceeds $0.006/run for any model; Layer 2 ranges from $0.19 to $4.94. The entire monthly cost ranking is decided by Layer 2, not Layer 1. Across all five models, Layer 2 exceeds Layer 1 by between 32x (gemini, whose high accuracy keeps fallback low) and 4,752x (llama), confirming that accuracy dominates token-price arithmetic whenever the failure cost exceeds per-run token cost by orders of magnitude.</p>
+
+<p><strong>Four cost levers.</strong> Table 7 shows each lever's measured before/after impact.</p>
+
+<div class="table-wrap">
+  <div class="table-title">Table 7. Four levers, measured before/after</div>
+  <table>
+    <thead><tr><th>Lever</th><th>Before</th><th>After</th><th>Impact</th></tr></thead>
+    <tbody>
+      <tr><td>1. Tool block size (B, re-sent every turn)</td><td>7 tools, 1,996 tokens</td><td>6 tools, 2,165 tokens</td><td>+169 tokens/turn net (cut saved 96; descriptors added 265)</td></tr>
+      <tr><td>2. Turn count (parallel calling)</td><td>649,111 input tokens / 40 cases</td><td>513,037 input tokens</td><td>-136,074 tokens (-21.0%)</td></tr>
+      <tr><td>3. Descriptor quality (v1 to v2)</td><td>62.5% pass, $0.2362 / 80 trials</td><td>70.0% pass, $0.2485</td><td>+7.5pp for +$0.0123 total</td></tr>
+      <tr><td>4. Success rate (model choice)</td><td>llama 35%: $4.94/task, $39,533/mo</td><td>gemini 97.5%: $0.20/task, $1,572/mo</td><td><strong>-$37,961/mo (-96%)</strong></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Lever 4 dominates by two orders of magnitude over every other lever. Levers 1 through 3 each move the bill by fractions of a cent per run; Lever 4 alone moves it from $1,572 to $39,533/month. Lever 3 exemplifies the same pattern at smaller scale: the vague v1 descriptor saves 118 tokens/turn ($0.00016/run), but its 7.5pp accuracy penalty adds $0.57/task in expected fallback cost. Layer 2's accuracy loss outweighs Layer 1's token saving by two orders of magnitude.</p>
+
+<p><strong>Break-even.</strong> Table 8 answers the question: how accurate would each cheaper model need to become to match gemini's total cost per task ($0.1959)?</p>
+
+<div class="table-wrap">
+  <div class="table-title">Table 8. Break-even success rates vs gemini-2.5-flash</div>
+  <table>
+    <thead><tr><th>Model</th><th>Current accuracy</th><th>Break-even target</th><th>Gap</th></tr></thead>
+    <tbody>
+      <tr><td>deepseek-v4-flash</td><td>90.0%</td><td>97.4%</td><td>+7.4pp</td></tr>
+      <tr><td>gpt-4o-mini</td><td>70.0%</td><td>97.5%</td><td>+27.5pp</td></tr>
+      <tr><td>qwen-2.5-7b-instruct</td><td>50.0%</td><td>97.4%</td><td>+47.4pp</td></tr>
+      <tr><td>llama-3.1-8b-instruct</td><td>35.0%</td><td>97.4%</td><td>+62.4pp</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Every break-even target lands at approximately 97.4%, gemini's own measured accuracy, regardless of how much cheaper the model's tokens are. llama is 5.7x cheaper by token price and would need to more than double its accuracy (35% to 97.4%) to match gemini economically. Because the failure cost ($7.60) exceeds per-run token cost by three orders of magnitude, token price cannot buy lower total cost. Only accuracy can.</p>
+
+<p><strong>Sensitivity.</strong> Table 9 shows the ±10pp band around gpt-4o-mini's measured p = 0.70. This baseline is a measured value from D5(b), not an assumption.</p>
+
+<div class="table-wrap">
+  <div class="table-title">Table 9. Sensitivity, ±10pp around measured p = 0.70</div>
+  <table>
+    <thead><tr><th>Scenario</th><th>p</th><th>Layer 2 / task</th><th>Monthly (8,000)</th></tr></thead>
+    <tbody>
+      <tr><td>Downside</td><td>0.60</td><td>$3.04</td><td>$24,350</td></tr>
+      <tr class="highlight-row"><td><strong>Measured</strong></td><td><strong>0.70</strong></td><td><strong>$2.28</strong></td><td><strong>$18,270</strong></td></tr>
+      <tr><td>Upside</td><td>0.80</td><td>$1.52</td><td>$12,190</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>A ±10pp swing moves the monthly bill by ±$6,080 (±33%) around the measured point. For a system where a wrong answer costs a human 12 minutes at $38/hour, the business conclusion from five real models is unambiguous: pick the most accurate model affordable, and treat token price as a rounding error.</p>
+
+<div class="fig-row">
+  <div class="figure half">
+    <img src="fig_d6_breakeven.png" alt="Break-even analysis">
+    <figcaption>Figure 10. Break-even analysis.</figcaption>
+  </div>
+  <div class="figure half">
+    <img src="fig_d6_sensitivity.png" alt="Sensitivity analysis">
+    <figcaption>Figure 11. Sensitivity analysis.</figcaption>
+  </div>
+</div>
+
+
+<!-- ============ SECTION 5 ============ -->
+<h2>5. The Two Failures</h2>
+
+<p>Both failures are built as "the working agent, minus one component," run on the scripted backend, free and reproducible. Restoring the deleted component reproduces the exact shipped agent.</p>
+
+<p><strong>Failure 1: loop control.</strong> Disabling action de-duplication (<code>max_repeats</code> set to 999 instead of 2) causes the agent to re-issue one identical <code>get_preauthorisation</code> call for 15 turns until the step cap stops it (Table 10).</p>
+
+<div class="table-wrap">
+  <div class="table-title">Table 10. Failure 1: loop-control failure on CLM-8888</div>
+  <table>
+    <thead><tr><th>Metric</th><th>Working</th><th>Broken</th><th>Restored</th></tr></thead>
+    <tbody>
+      <tr><td>Turns</td><td>5</td><td><strong>15</strong></td><td>5</td></tr>
+      <tr><td>Tool calls</td><td>2</td><td><strong>15</strong></td><td>2</td></tr>
+      <tr><td>Input tokens</td><td>12,368</td><td><strong>43,624</strong></td><td>12,368</td></tr>
+      <tr><td>Cost</td><td>$0.00133</td><td><strong>$0.00464</strong></td><td>$0.00133</td></tr>
+      <tr><td>Pass</td><td>True</td><td><strong>True</strong></td><td>True</td></tr>
+      <tr><td>Guard triggered</td><td>repeated_action</td><td>step_cap_exceeded</td><td>repeated_action</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Pass is True in all three columns: the broken run still reaches a defensible <code>escalate</code>, so pass rate alone reveals no problem. Only the instrumentation columns (3.0x turns, 3.5x cost) expose the failure. The step cap catches it eventually but 3x later and at maximum cost; the de-duplication guard recognises the exact failure signature directly and fires at turn 5. No legitimate case ever exceeds 6 turns, so restoring the guard costs nothing.</p>
+
+<p><strong>Failure 2: tool interface.</strong> Dropping the fourth match criterion (line items) from <code>check_duplicate</code> causes CLM-8960 (a genuine 4-line claim) to collide with an unrelated 1-line prior claim sharing the same member, hospital, and date (Table 11).</p>
+
+<div class="table-wrap">
+  <div class="table-title">Table 11. Failure 2: tool-interface failure on CLM-8960</div>
+  <table>
+    <thead><tr><th>Metric</th><th>Working</th><th>Broken</th><th>Restored</th></tr></thead>
+    <tbody>
+      <tr><td>Turns</td><td>5</td><td><strong>4</strong></td><td>5</td></tr>
+      <tr><td>Tool calls</td><td>8</td><td><strong>3</strong></td><td>8</td></tr>
+      <tr><td>Input tokens</td><td>13,093</td><td><strong>9,697</strong></td><td>13,093</td></tr>
+      <tr><td>Cost</td><td>$0.00161</td><td><strong>$0.00108</strong></td><td>$0.00161</td></tr>
+      <tr><td>Decision</td><td>approve</td><td><strong>escalate</strong></td><td>approve</td></tr>
+      <tr><td>Pass</td><td>True</td><td><strong>False</strong></td><td>True</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>This failure mirrors Failure 1 in every dimension. The broken run is <em>cheaper</em> on every instrumentation signal (fewer turns, fewer tokens, lower cost) because escalating early skips line pricing. Turns and cost do not flag this failure at all; the run looks efficient. The only column that catches it is Pass, checked against D4's answer key. No loop-control or gate guard fires because the run took a clean, efficient, wrong path once. The fix belongs in <code>check_duplicate</code>'s own comparison logic, making the false-positive class structurally impossible.</p>
+
+<div class="figure">
+  <img src="fig_d7_failures.png" alt="Both failures visualised">
+  <figcaption>Figure 12. Both failures: loop-control (left) and tool-interface (right).</figcaption>
+</div>
+
+
+<!-- ============ SECTION 6 ============ -->
+<h2>6. What We Would Not Deploy</h2>
+
+<p>The gated action uses <code>confirm</code> autonomy: the agent gathers evidence and reasons freely, but cannot write a decision letter until a human operator approves. <code>suggest</code> (refuse all writes) wastes the automation at 8,000 claims/month; <code>act</code> (no gate) exposes the system to the one failure D5(b) proved universal.</p>
+
+<p>The guardrail checklist passes 12/12 on the scripted backend: step cap, budget ceiling, action de-duplication, unparseable output, malformed gate calls, duplicate writes, three hostile-text shapes (jailbreak, data exfiltration, role hijack), premature gated action, confirm-mode blocking, and invalid arguments (Fig. 13).</p>
+
+<p>The gap we would not deploy around: <code>prompt_injection_imitating_tool_output</code> bypasses all five tested models, including gemini at 97.5% overall accuracy. The current prompt warns against instructions and fake authority in the narrative but does not warn against text impersonating a tool's own output format. Closing this requires either an explicit prompt clause or a structural check that tool observations originate only from the tool layer.</p>
+
+<div class="figure">
+  <img src="fig_d3b_guardrails.png" alt="Guardrail checklist results">
+  <figcaption>Figure 13. Guardrail checklist: 12/12 pass.</figcaption>
+</div>
+
+<!-- ============ FOOTER ============ -->
+<div class="report-footer">
+  PE6201 Emerging AI Technologies · A2 Applied AI System · Team B-9 Section B
+</div>
+
+</body>
+</html>
