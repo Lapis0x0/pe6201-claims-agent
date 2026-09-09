@@ -26,9 +26,15 @@ CHECK_COVERAGE_V1 = {
     "signature": "check_coverage(policy_id, procedure_code)",
     "what": "",
     "input": "policy_id and procedure_code.",
-    "returns": "coverage details for the procedure.",
-    "fails_when": "the inputs are wrong.",
-    "irreversible": "No.",
+    "returns": (
+        "This tool will return some details about the coverage situation "
+        "for the given procedure under the given policy, which may include "
+        "things like whether it is covered, whether anything else is "
+        "needed, and other related information depending on what applies "
+        "in this particular case."
+    ),
+    "fails_when": "",
+    "irreversible": "",
     "poka_yoke": [],
     "prompt_guidance": "use this to check coverage.",
 }

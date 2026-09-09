@@ -9,7 +9,7 @@ harness against the same cases could silently disagree.
 
 ## The test
 
-Two independent, back-to-back invocations of the full 40-case set:
+Two independent, back-to-back invocations of the full 50-case set:
 
 ```
 $ python3 harness.py --json /tmp/run_a.json
@@ -17,10 +17,10 @@ $ python3 harness.py --json /tmp/run_b.json
 $ diff /tmp/run_a.json /tmp/run_b.json
 ```
 
-`diff` reports differences on 80 lines out of ~2,800 — every one of them
+`diff` reports differences on 356 lines out of ~3,238 — every one of them
 the `runtime_seconds` field (real wall-clock timing, which is
 instrumentation, not part of the decision — see D1's field table). Every
-other field, for every one of the 80 trial rows (`decision`, `detail`,
+other field, for every one of the 90 trial rows (`decision`, `detail`,
 `trigger`, `steps`, `tool_calls`, `letter_issued`, `trace`,
 `guardrails_fired`), is unchanged:
 

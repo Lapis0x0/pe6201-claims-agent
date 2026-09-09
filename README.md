@@ -60,15 +60,16 @@ lives in `figs/` — both are referenced by path in the table below.
 | `generate_plots.py`, `figs/fig_d0_class4_bill_test.png`, `figs/fig_d0_turn_token_growth.png` | One generator for the standalone supplementary figures: completed-task cost, turn sensitivity, and the two historical D5 diagnostics. The primary D2-D7 figures remain in the analysis notebook. |
 | `docs/d1_sample_traces.md` | D1: one trace per outcome (approve/ask/escalate) and a fully instrumented decision record (turns, tool calls, tokens, cost, runtime, guardrails fired, evidence trace). |
 | `docs/d2_tool_analysis.md` | D2(a): the tool set scored against the three questions, and the evidence for cutting `get_claim`. |
-| `docs/d2b_descriptor_rewrite.md`, `descriptors_v1.py`, `measure_d2b.py` | D2(b): the six-field descriptors, four poka-yoke moves, actual observation-return size, the 12/12-vs-12/12 guardrail control, and the v1-vs-v2 live comparison on `openai/gpt-4o-mini` (68.75% vs 60.0% trial-level). |
-| `docs/d4_case_notes.md`, `docs/d4_judgement_checks.md`, `docs/judgement_check_prompt.md` | D4: the 40-case evaluation set, run arithmetic, code checks, and the completed independent live-record judgement check (2/10; evidence-detail gaps documented). |
-| `docs/d2c_measurement.md`, `measure_parallel.py` | D2(c): the dependency rule, and an exact (not approximated) parallel-vs-sequential token measurement over all 40 cases. |
+| `docs/d2b_descriptor_rewrite.md`, `descriptors_v1.py`, `measure_d2b.py` | D2(b) descriptor: the six-field descriptors, four poka-yoke moves, actual observation-return size, the 12/12-vs-12/12 guardrail control, and the v1-vs-v2 live comparison on `openai/gpt-4o-mini` (66.7% v2 vs 64.4% v1, trial-level, current 50-case set). |
+| `docs/d2b_return_shape.md`, `measure_return_shape.py` | D2(b) return shape: `check_coverage`'s actual return value, prose (v1) vs typed JSON (v2), descriptor pinned at v2 in both arms — 74.4% v2 vs 70.0% v1, trial-level, current 50-case set. |
+| `docs/d4_case_notes.md`, `docs/d4_judgement_checks.md`, `docs/judgement_check_prompt.md` | D4: the 50-case evaluation set, run arithmetic, code checks, and two independent live-record judgement-check passes across two models (2/20 combined; evidence-detail gaps documented). |
+| `docs/d2c_measurement.md`, `measure_parallel.py` | D2(c): the dependency rule, and an exact (not approximated) parallel-vs-sequential token measurement over all 50 cases. |
 | `docs/d3a_autonomy.md` | D3(a): the autonomy setting (suggest/confirm/act), made into real enforced behaviour rather than a descriptive label, and why `confirm` is the shipped default. |
 | `docs/d3b_guardrail_checklist.md`, `guardrail_checklist.py` | D3(b): the 12-case guardrail checklist (step cap, budget ceiling, dedup, gate x3 incl. operator approval, invalid arguments, 3 hostile-narrative shapes), scripted and free. |
 | `docs/d6_notes.md`, `d6_cost_model.py` | D6: the three-layer cost model, all four levers measured before/after, a sensitivity range in place of an unmeasured success rate, and the break-even mechanism. |
 | `docs/d7_failures.md`, `failure1_loop.py`, `failure2_interface.py` | D7: two reproduced failures, each built as "the working agent, minus X." Failure 1 (required): de-duplication removed, a loop runs to the step cap; 3.0x turns, 3.6x cost, fixed by restoring the guard. Failure 2 (interface layer): `check_duplicate`'s match weakened from 4 facts to 3, producing a confident, wrong, and *cheaper*-looking escalation of a genuine claim. |
 | `demo_loop_failure.py` | A narrated, presentation-friendly run of Failure 1 — same evidence as `failure1_loop.py`, formatted for the 5-minute demo video. `python3 demo_loop_failure.py`, no key needed. |
-| `A2_tour.ipynb` | Optional — a narrated, one-case (`CLM-8842`) walkthrough of the whole system, cell by cell, mirroring the professor's own scaffold tour notebook but against our modules and our 40-case data. Good for onboarding teammates and for the demo video; not what a marker runs. |
+| `A2_tour.ipynb` | Optional — a narrated, one-case (`CLM-8842`) walkthrough of the whole system, cell by cell, mirroring the professor's own scaffold tour notebook but against our modules and our 50-case data. Good for onboarding teammates and for the demo video; not what a marker runs. |
 | `results/` | Committed run outputs (`--json` exports) the `docs/*.md` write-ups cite numbers from — see `results/README.md`. Everything there is free to regenerate except the one live smoke-test file. |
 | `A2_analysis.ipynb` | Optional — not a submission requirement (see D5(a): `harness.py` is what a marker runs). Imports the modules above to run and plot D2(a)/(b)/(c), D3(b), D4, D6, D7 and D5(b) in one place. Figures are saved to `figs/*.png` for the report — the notebook's own `savefig` cells write there directly. |
 | `docs/d5a_reproducibility.md` | D5(a): proof the scripted backend is deterministic — two clean runs, diffed, identical except wall-clock timing. |
@@ -84,7 +85,8 @@ python3 harness.py --sequential     # same trajectories, one action per turn
 python3 harness.py --case CLM-8894 --verbose
 python3 harness.py --judgement-sheet
 python3 agent.py CLM-8842           # one claim, full trace
-python3 measure_d2b.py              # D2(b) zero-cost control measurements
+python3 measure_d2b.py              # D2(b) descriptor zero-cost control measurements
+python3 measure_return_shape.py     # D2(b) return-shape zero-cost control measurements
 python3 verify_submission.py         # all zero-cost checks plus evidence validation
 python3 generate_plots.py             # reproduce all standalone figures
 ```
@@ -153,3 +155,6 @@ loop-control trigger. It does not crash and it does not guess.
 `issue_decision_letter` appends one JSON record per decision to
 `decisions.jsonl` in this directory. It sends nothing, and it touches no live
 system. The file is git-ignored: it is the output of a run, not a source file.
+Each record carries the decision and its evidence trail, autonomy setting,
+gate/approval status, timestamp, turn count and cost — see
+`docs/d1_sample_traces.md` for the full shape.

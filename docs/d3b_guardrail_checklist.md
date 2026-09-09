@@ -59,5 +59,5 @@ driver puts it on.
 
 ```
 $ python3 guardrail_checklist.py --json d3b_results.json
-$ python3 harness.py                     # unaffected: 40/40
+$ python3 harness.py                     # unaffected: 50/50
 ```

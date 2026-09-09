@@ -36,38 +36,17 @@ import scripts_A
 import tools as tools_module
 from agent import ClaimsAgent
 from backend import LiveBackend, ScriptedBackend
+# PRICE_PER_MILLION / cost_usd() live in config.py, the single source of
+# truth agent.py's gated-action record (D1's decisions.jsonl "cost_usd"
+# field) and this harness both read. Re-exported here so existing imports
+# (`from harness import PRICE_PER_MILLION`, e.g. d6_cost_model.py) keep
+# working unchanged.
+from config import PRICE_PER_MILLION, cost_usd
 
 
 def load_expected(path=config.EXPECTED_OUTCOMES_PATH):
     with open(path, encoding="utf-8") as fh:
         return {row["case_id"]: row for row in json.load(fh)}
-
-
-# USD per million tokens (in, out). Only the models this project has
-# actually measured against - not a general-purpose price list, and not
-# baked into agent.py, so a stale number here can't silently corrupt the
-# instrumentation itself. Section 7's cheap/mid/frontier tiers are the
-# fallback shape; add a model here once you've actually run it.
-PRICE_PER_MILLION = {
-    # (prompt $/M, completion $/M) - fetched from OpenRouter's /api/v1/models
-    # on 2026-09-06, the day of the live battery these prices priced.
-    "openai/gpt-4o-mini": (0.15, 0.60),
-    "deepseek/deepseek-chat": (0.14, 0.28),
-    "google/gemini-2.5-flash": (0.30, 2.50),
-    "deepseek/deepseek-v4-flash": (0.08078, 0.16156),
-    "meta-llama/llama-3.1-8b-instruct": (0.05, 0.08),
-    "qwen/qwen-2.5-7b-instruct": (0.10, 0.20),
-}
-
-
-def cost_usd(model, prompt_tokens, completion_tokens):
-    """None if the model isn't in PRICE_PER_MILLION - report "unknown", not
-    a silently wrong number."""
-    prices = PRICE_PER_MILLION.get(model)
-    if prices is None:
-        return None
-    price_in, price_out = prices
-    return prompt_tokens / 1e6 * price_in + completion_tokens / 1e6 * price_out
 
 
 def check(result, expected):
@@ -111,7 +90,7 @@ def check(result, expected):
 
 def run_evaluation(backend_factory, cases, expected_by_id, trials=1,
                    verbose=False, prompt_overrides=None, negative_trials=None,
-                   model=None):
+                   model=None, return_shape_version="v1"):
     """Run every case its own number of times, and score each run.
 
     Ordinary cases get `trials`. Negative cases (expected_decision !=
@@ -127,7 +106,8 @@ def run_evaluation(backend_factory, cases, expected_by_id, trials=1,
         is_negative = expected["expected_decision"] != "approve_in_principle"
         n_trials = negative_trials if (is_negative and negative_trials) else trials
         for trial in range(1, n_trials + 1):
-            claim_tools = tools_module.ClaimsTools(claim)
+            claim_tools = tools_module.ClaimsTools(
+                claim, return_shape_version=return_shape_version)
             agent = ClaimsAgent(backend_factory(claim), claim,
                                 claim_tools=claim_tools, verbose=verbose,
                                 prompt_overrides=prompt_overrides)
@@ -151,6 +131,8 @@ def run_evaluation(backend_factory, cases, expected_by_id, trials=1,
                 "detail": result.detail,
                 "prompt_tokens": result.prompt_tokens,
                 "completion_tokens": result.completion_tokens,
+                "cached_tokens": result.cached_tokens,
+                "reasoning_tokens": result.reasoning_tokens,
                 "runtime_seconds": result.runtime_seconds,
                 "guardrails_fired": result.guardrails_fired,
                 "cost_usd": (0.0 if not (result.prompt_tokens or
@@ -315,7 +297,11 @@ def print_judgement_sheet(rows):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--live", action="store_true",
-                        help="use a real model instead of the scripted backend")
+                        default=(config.BACKEND == "live"),
+                        help="use a real model instead of the scripted "
+                             "backend. Defaults to config.BACKEND "
+                             "('scripted'), the one switch in the brief's "
+                             "BACKEND/MODEL/BASE_URL block.")
     parser.add_argument("--model", default=config.DEFAULT_MODEL)
     parser.add_argument("--api-key", default=os.environ.get("OPENROUTER_API_KEY"))
     parser.add_argument("--trials", type=int, default=1,
@@ -343,6 +329,14 @@ def main():
                              "from descriptors_v1.py. Only affects --live "
                              "runs; the scripted backend never reads the "
                              "prompt.")
+    parser.add_argument("--return-shape-version", choices=["v1", "v2"],
+                        default="v1",
+                        help="D2(b) return-shape control arm: v2 swaps "
+                             "check_coverage's actual return value from a "
+                             "prose sentence to typed JSON, holding the "
+                             "descriptor fixed at v2. Only affects --live "
+                             "runs; the scripted backend's expected "
+                             "trajectories assume v1.")
     args = parser.parse_args()
 
     expected_by_id = load_expected()
@@ -362,12 +356,27 @@ def main():
               "skipped: {}".format(len(unlabelled), ", ".join(unlabelled)),
               file=sys.stderr)
 
+    prompt_overrides = None
+    if args.descriptor_version == "v1":
+        import descriptors_v1
+        prompt_overrides = descriptors_v1.OVERRIDES
+
     if args.live:
-        label = "live: {} (descriptors {})".format(
-            args.model, args.descriptor_version)
+        label = "live: {} (descriptors {}, return-shape {})".format(
+            args.model, args.descriptor_version, args.return_shape_version)
 
         def backend_factory(claim):
             return LiveBackend(model=args.model, api_key=args.api_key)
+
+        # Provenance: the exact rendered prompt this run used, fingerprinted
+        # so it is independently checkable rather than only asserted in
+        # prose (results/manifest.json's prompt_sha256 for each canonical
+        # run is this same hash, computed the same way).
+        import hashlib
+        prompt_text = config.build_system_prompt(prompt_overrides)
+        prompt_hash = hashlib.sha256(prompt_text.encode()).hexdigest()
+        print("prompt sha256 ({} chars): {}".format(
+            len(prompt_text), prompt_hash))
     else:
         label = "scripted ({})".format(
             "sequential" if args.sequential else "parallel")
@@ -381,16 +390,12 @@ def main():
     # decision log is the log of this evaluation and not of every past one.
     open(config.DECISIONS_PATH, "w", encoding="utf-8").close()
 
-    prompt_overrides = None
-    if args.descriptor_version == "v1":
-        import descriptors_v1
-        prompt_overrides = descriptors_v1.OVERRIDES
-
     rows = run_evaluation(backend_factory, cases, expected_by_id,
                           trials=args.trials, verbose=args.verbose,
                           prompt_overrides=prompt_overrides,
                           negative_trials=args.negative_trials,
-                          model=args.model if args.live else None)
+                          model=args.model if args.live else None,
+                          return_shape_version=args.return_shape_version)
     passed, total = report(rows, label, args.trials, args.negative_trials)
     print_d4_summary(rows)
 

@@ -758,5 +758,195 @@
       "output_chars": 2413,
       "output_tokens_est": 603
     }
+  },
+  {
+    "case_id": "CLM-9105",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 7,
+      "input_chars": 51790,
+      "input_tokens_est": 12948,
+      "output_chars": 2575,
+      "output_tokens_est": 644
+    },
+    "sequential": {
+      "turns": 8,
+      "tool_calls": 7,
+      "input_chars": 83580,
+      "input_tokens_est": 20895,
+      "output_chars": 2602,
+      "output_tokens_est": 650
+    }
+  },
+  {
+    "case_id": "CLM-9110",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 7,
+      "input_chars": 62673,
+      "input_tokens_est": 15668,
+      "output_chars": 2507,
+      "output_tokens_est": 627
+    },
+    "sequential": {
+      "turns": 8,
+      "tool_calls": 7,
+      "input_chars": 83551,
+      "input_tokens_est": 20888,
+      "output_chars": 2525,
+      "output_tokens_est": 631
+    }
+  },
+  {
+    "case_id": "CLM-9115",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 5,
+      "input_chars": 50069,
+      "input_tokens_est": 12517,
+      "output_chars": 1877,
+      "output_tokens_est": 469
+    },
+    "sequential": {
+      "turns": 6,
+      "tool_calls": 5,
+      "input_chars": 60273,
+      "input_tokens_est": 15068,
+      "output_chars": 1886,
+      "output_tokens_est": 472
+    }
+  },
+  {
+    "case_id": "CLM-9120",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 5,
+      "input_chars": 49873,
+      "input_tokens_est": 12468,
+      "output_chars": 1885,
+      "output_tokens_est": 471
+    },
+    "sequential": {
+      "turns": 6,
+      "tool_calls": 5,
+      "input_chars": 60043,
+      "input_tokens_est": 15011,
+      "output_chars": 1894,
+      "output_tokens_est": 474
+    }
+  },
+  {
+    "case_id": "CLM-9125",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 7,
+      "input_chars": 62857,
+      "input_tokens_est": 15714,
+      "output_chars": 2536,
+      "output_tokens_est": 634
+    },
+    "sequential": {
+      "turns": 8,
+      "tool_calls": 7,
+      "input_chars": 83800,
+      "input_tokens_est": 20950,
+      "output_chars": 2554,
+      "output_tokens_est": 638
+    }
+  },
+  {
+    "case_id": "CLM-9130",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 5,
+      "input_chars": 49765,
+      "input_tokens_est": 12441,
+      "output_chars": 1833,
+      "output_tokens_est": 458
+    },
+    "sequential": {
+      "turns": 6,
+      "tool_calls": 5,
+      "input_chars": 59912,
+      "input_tokens_est": 14978,
+      "output_chars": 1842,
+      "output_tokens_est": 460
+    }
+  },
+  {
+    "case_id": "CLM-9135",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 7,
+      "input_chars": 51588,
+      "input_tokens_est": 12897,
+      "output_chars": 2569,
+      "output_tokens_est": 642
+    },
+    "sequential": {
+      "turns": 8,
+      "tool_calls": 7,
+      "input_chars": 83231,
+      "input_tokens_est": 20808,
+      "output_chars": 2596,
+      "output_tokens_est": 649
+    }
+  },
+  {
+    "case_id": "CLM-9140",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 5,
+      "input_chars": 50202,
+      "input_tokens_est": 12550,
+      "output_chars": 1892,
+      "output_tokens_est": 473
+    },
+    "sequential": {
+      "turns": 6,
+      "tool_calls": 5,
+      "input_chars": 60442,
+      "input_tokens_est": 15110,
+      "output_chars": 1901,
+      "output_tokens_est": 475
+    }
+  },
+  {
+    "case_id": "CLM-9145",
+    "parallel": {
+      "turns": 6,
+      "tool_calls": 7,
+      "input_chars": 62664,
+      "input_tokens_est": 15666,
+      "output_chars": 2537,
+      "output_tokens_est": 634
+    },
+    "sequential": {
+      "turns": 8,
+      "tool_calls": 7,
+      "input_chars": 83513,
+      "input_tokens_est": 20878,
+      "output_chars": 2555,
+      "output_tokens_est": 639
+    }
+  },
+  {
+    "case_id": "CLM-9150",
+    "parallel": {
+      "turns": 5,
+      "tool_calls": 5,
+      "input_chars": 49879,
+      "input_tokens_est": 12470,
+      "output_chars": 1878,
+      "output_tokens_est": 470
+    },
+    "sequential": {
+      "turns": 6,
+      "tool_calls": 5,
+      "input_chars": 60048,
+      "input_tokens_est": 15012,
+      "output_chars": 1887,
+      "output_tokens_est": 472
+    }
   }
 ]

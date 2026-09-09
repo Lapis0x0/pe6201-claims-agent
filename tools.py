@@ -16,6 +16,7 @@ a per-run ClaimsTools instance rather than being free functions.
 
 import json
 import os
+from datetime import datetime, timezone
 
 import config
 
@@ -42,6 +43,23 @@ def _money(value):
     return "{:,.0f}".format(value)
 
 
+def _collapse_evidence(calls):
+    """["check_coverage","check_coverage","check_hospital"] ->
+    ["check_coverage x2","check_hospital"] - one entry per tool, in the
+    order it was first called, matching the brief's own worked-example
+    shape ("check_coverage x3")."""
+    seen = []
+    counts = {}
+    for name in calls:
+        if name not in counts:
+            seen.append(name)
+        counts[name] = counts.get(name, 0) + 1
+    return [
+        name if counts[name] == 1 else "{} x{}".format(name, counts[name])
+        for name in seen
+    ]
+
+
 # ---------------------------------------------------------------------------
 # the tools
 # ---------------------------------------------------------------------------
@@ -65,11 +83,18 @@ class ClaimsTools:
 
     def __init__(self, claim, data_dir=config.DATA_DIR,
                  decisions_path=config.DECISIONS_PATH,
-                 autonomy=config.AUTONOMY, operator_approved=True):
+                 autonomy=config.AUTONOMY, operator_approved=True,
+                 return_shape_version="v1"):
         self.claim = claim
         self.decisions_path = decisions_path
         self.autonomy = autonomy
         self.operator_approved = operator_approved
+        # D2(b) return-shape control arm: v1 is the original prose sentence
+        # (below, unchanged); v2 is a typed JSON string for check_coverage
+        # only, holding the descriptor fixed at config.TOOL_SPECS v2 so the
+        # return shape is the only variable that moves. See
+        # docs/d2b_return_shape.md.
+        self.return_shape_version = return_shape_version
         self.members = load_table("members", data_dir)
         self.policies = load_table("policies", data_dir)
         self.procedures = load_table("procedures", data_dir)
@@ -81,6 +106,15 @@ class ClaimsTools:
         # run state, read by the gate
         self.policy_looked_up = False
         self.letter_issued = False
+
+        # D1 audit trail, read by issue_decision_letter when it writes the
+        # record. ToolLayer has no visibility into turns or backend cost by
+        # itself, so the agent loop populates these three right before
+        # dispatching issue_decision_letter (agent.py's _dispatch and
+        # _current_cost).
+        self.evidence_calls = []
+        self.turn = 0
+        self.cost_so_far = 0.0
 
     # -- registry ----------------------------------------------------------
 
@@ -157,15 +191,32 @@ class ClaimsTools:
             A formatted observation naming exclusion status and rule,
             pre-authorisation requirement, and required supporting document.
         """
+        v2 = self.return_shape_version == "v2"
         policy = _first(self.policies, policy_id=policy_id)
         if policy is None:
+            if v2:
+                return json.dumps({"error": "NOT FOUND", "field": "policy_id",
+                                    "value": policy_id})
             return "NOT FOUND: no policy with policy_id {}.".format(policy_id)
         procedure = _first(self.procedures, code=procedure_code)
         if procedure is None:
+            if v2:
+                return json.dumps({"error": "NOT FOUND", "field": "procedure_code",
+                                    "value": procedure_code})
             return "NOT FOUND: no procedure with code {}.".format(procedure_code)
 
         exclusion = _first(policy["exclusions"], code=procedure_code)
         required = _first(self.required_documents, procedure_code=procedure_code)
+        if v2:
+            return json.dumps({
+                "policy_id": policy_id,
+                "procedure_code": procedure["code"],
+                "description": procedure["description"],
+                "covered": exclusion is None,
+                "exclusion_rule": exclusion["rule"] if exclusion else None,
+                "requires_preauth": bool(procedure["requires_preauth"]),
+                "required_document": required["document"] if required else None,
+            })
         if exclusion is None:
             covered = "covered by {}".format(policy_id)
         else:
@@ -285,6 +336,17 @@ class ClaimsTools:
         The gate refuses rather than raises, so a refusal reaches the model as
         an observation it can act on.
 
+        The record carries a full audit trail alongside the decision itself -
+        timestamp, the evidence trail, the autonomy setting, gate/approval
+        status, the turn it was recorded on, and the run's cost so far - so
+        decisions.jsonl answers "which decision, on what evidence, after
+        which gate, and at what cost" on its own, matching the brief's D1
+        worked example, without needing the harness's separate AgentResult.
+        cost_usd is computed by agent.py's _current_cost() from
+        config.PRICE_PER_MILLION (the single pricing source this project
+        also uses for harness.py's own reporting) at the moment of the
+        write, and is 0.0 on the scripted backend or any unpriced model.
+
         Args:
             claim_id: the claim being decided.
             decision: one of config.DECISIONS.
@@ -298,10 +360,24 @@ class ClaimsTools:
         if refusal is not None:
             return "GATE REFUSED: " + refusal
 
+        if self.autonomy == "confirm":
+            gate_status = "operator approved at turn {}".format(self.turn)
+        else:
+            gate_status = (
+                "autonomy={}, no operator confirmation required".format(
+                    self.autonomy)
+            )
+
         record = {
+            "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "claim_id": claim_id,
             "decision": decision,
             "detail": detail,
+            "evidence": _collapse_evidence(self.evidence_calls),
+            "autonomy": self.autonomy,
+            "gate": gate_status,
+            "turns": self.turn,
+            "cost_usd": round(self.cost_so_far, 4),
         }
         with open(self.decisions_path, "a", encoding="utf-8") as fh:
             fh.write(json.dumps(record, ensure_ascii=False) + "\n")

@@ -93,20 +93,28 @@ def turn_token_growth_plot():
     ax.stackplot(turns, prefix, history,
                  labels=["Repeated base prompt: B x T",
                          "Accumulated history: D x T(T-1) / 2"],
-                 colors=[BLUE, CORAL], alpha=0.9)
-    ax.plot(turns, totals, color=NAVY, linewidth=2.2, marker="o",
-            markersize=3, label="Total predicted input")
+                 colors=[LIGHT_BLUE, "#F2B7A8"], alpha=0.55)
+    ax.plot(turns, totals, color=NAVY, linewidth=2.5,
+            label="Total predicted input")
+    offsets = {4: (-34, 14), 8: (10, 14), 16: (-92, -36)}
     for turn in (4, 8, 16):
         total = predicted_input(turn)
-        ax.annotate(f"{turn} turns\n{total:,.0f} tokens", (turn, total),
-                    xytext=((-28 if turn == 16 else 0), 10),
-                    textcoords="offset points", ha="center", fontsize=9,
-                    fontweight="bold")
+        is_measured = turn == 8
+        ax.scatter([turn], [total], color=(CORAL if is_measured else BLUE),
+                   s=100 if is_measured else 65, zorder=6,
+                   edgecolor="white", linewidth=1.2)
+        label = (f"T={turn}: {total:,.0f} tokens\n"
+                 + ("representative point" if is_measured else "predicted"))
+        ax.annotate(label, (turn, total), xytext=offsets[turn],
+                    textcoords="offset points", ha="left", fontsize=8.8,
+                    fontweight="bold" if is_measured else "normal",
+                    color=(CORAL if is_measured else NAVY))
+    ax.axvline(8, color=CORAL, linestyle="--", linewidth=1, alpha=0.75)
     ratio = predicted_input(16) / predicted_input(8)
     ax.text(0.02, 0.94, f"8 -> 16 turns: {ratio:.1f}x input tokens",
-            transform=ax.transAxes, fontsize=11, fontweight="bold",
+            transform=ax.transAxes, fontsize=10, fontweight="bold",
             bbox={"boxstyle": "round,pad=0.35", "facecolor": "white",
-                  "edgecolor": "#777777", "alpha": 0.9})
+                  "edgecolor": LIGHT_BLUE, "alpha": 0.9})
     ax.set_title("Input-token growth as agent turns increase")
     ax.set_xlabel("Agent turns (T)")
     ax.set_ylabel("Predicted input tokens across one run")
@@ -120,6 +128,196 @@ def turn_token_growth_plot():
             transform=ax.transAxes, fontsize=9, color="#444444")
     fig.tight_layout()
     save(fig, "fig_d0_turn_token_growth.png")
+
+
+def reliability_curve_plot():
+    """Connect D0 reliability to D6 cost using one measured operating point."""
+    from d6_cost_model import FAILURE_COST, VOLUME_PER_MONTH
+
+    p_measured = 60 / 90
+    # Pair P and T from the same GPT-4o-mini live-trial distribution.
+    t_measured = 8
+    s = p_measured ** (1 / t_measured)
+    l1 = measure_run(*RUNS["gpt-4o-mini"])["l1"]
+
+    def monthly_cost(p):
+        return VOLUME_PER_MONTH * (l1 + (1 - p) * FAILURE_COST)
+
+    turns = [t / 2 for t in range(2, 33)]
+    success = [100 * s ** t for t in turns]
+    cost = [monthly_cost(s ** t) for t in turns]
+
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.5, 5.6), sharex=True)
+
+    ax.plot(turns, success, color=NAVY, linewidth=2.5, zorder=4)
+    ax.fill_between(turns, success, color=LIGHT_BLUE, alpha=0.28)
+    offsets_left = {4: (-8, 14), t_measured: (10, 14), 12: (10, -30)}
+    for turn in (4, t_measured, 12):
+        p = s ** turn
+        is_measured = (turn == t_measured)
+        ax.scatter([turn], [100 * p], color=(CORAL if is_measured else BLUE),
+                   s=100 if is_measured else 65, zorder=6,
+                   edgecolor="white", linewidth=1.2)
+        label = f"T={turn}: {100*p:.1f}%" + ("\n(measured)" if is_measured
+                                              else "\n(predicted)")
+        ax.annotate(label, (turn, 100 * p), xytext=offsets_left[turn],
+                    textcoords="offset points", ha="left", fontsize=8.8,
+                    fontweight="bold" if is_measured else "normal",
+                    color=(CORAL if is_measured else NAVY))
+    ax.axvline(t_measured, color=CORAL, linestyle="--", linewidth=1,
+               alpha=0.75)
+    ax.set_title("Predicted whole-run reliability", fontsize=11)
+    ax.set_xlabel("Turns in one run (T)")
+    ax.set_ylabel("Predicted whole-run success rate")
+    ax.set_ylim(45, 102)
+    ax.set_xlim(1, 16)
+    ax.set_xticks(range(1, 17, 2))
+    ax.yaxis.set_major_formatter(lambda v, _: f"{v:.0f}%")
+    ax.grid(axis="y", alpha=0.2)
+
+    ax2.plot(turns, cost, color=CORAL, linewidth=2.5, zorder=4)
+    ax2.fill_between(turns, cost, color=CORAL, alpha=0.12)
+    offsets_right = {4: (-8, 14), t_measured: (10, -30), 12: (10, 14)}
+    for turn in (4, t_measured, 12):
+        p = s ** turn
+        is_measured = (turn == t_measured)
+        ax2.scatter([turn], [monthly_cost(p)],
+                    color=(CORAL if is_measured else BLUE),
+                    s=100 if is_measured else 65, zorder=6,
+                    edgecolor="white", linewidth=1.2)
+        label = (f"T={turn}: USD {monthly_cost(p):,.0f}/mo"
+                 + ("\n(measured P)" if is_measured else "\n(predicted)"))
+        ax2.annotate(label, (turn, monthly_cost(p)), xytext=offsets_right[turn],
+                     textcoords="offset points", ha="left", fontsize=8.8,
+                     fontweight="bold" if is_measured else "normal",
+                     color=(CORAL if is_measured else NAVY))
+    ax2.axvline(t_measured, color=CORAL, linestyle="--", linewidth=1,
+                alpha=0.75)
+    ax2.set_title("Implied monthly cost from the same reliability curve",
+                  fontsize=11)
+    ax2.set_xlabel("Turns in one run (T)")
+    ax2.set_ylabel("Implied monthly cost, 8,000 claims")
+    ax2.set_ylim(0, max(cost) * 1.15)
+    ax2.set_xticks(range(1, 17, 2))
+    ax2.yaxis.set_major_formatter(lambda v, _: f"USD {v:,.0f}")
+    ax2.grid(axis="y", alpha=0.2)
+
+    fig.suptitle("Increasing turns compounds failure risk and expected cost",
+                 fontsize=12.5, y=1.02)
+    fig.text(0.01, -0.07,
+             f"Both panels use paired GPT-4o-mini live-trial measurements "
+             f"(P={p_measured:.3f}, T={t_measured}); T=4 and T=12 are "
+             "predictions, not separate measurements.\n"
+             f"Cost holds measured L1 at USD {l1:.4f}/run and uses Problem A's "
+             "USD 7.60 failure cost; real turns are not independent or equally "
+             "difficult.", fontsize=8.3, color="#444444")
+    fig.tight_layout()
+    save(fig, "fig_d0_reliability_curve.png")
+
+
+def failure_reproduction_plot():
+    """D7 before/after evidence in the report's shared visual language."""
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 5.6))
+
+    # Failure 1 is detected by excess work even though the outcome still passes.
+    states1 = ["Working", "Broken", "Restored"]
+    turns1 = [5, 15, 5]
+    colors1 = [BLUE, CORAL, NAVY]
+    axes[0].bar(states1, turns1, color=colors1, width=0.58)
+    axes[0].axhline(15, color=CORAL, linestyle="--", linewidth=1,
+                    alpha=0.75, label="15-turn backstop")
+    axes[0].set_title("Failure 1: repeated action reaches the turn cap",
+                      fontsize=11)
+    axes[0].set_ylabel("Agent turns per run")
+    axes[0].set_ylim(0, 17.5)
+    axes[0].grid(axis="y", alpha=0.2)
+    axes[0].legend(frameon=False, loc="upper right")
+    for i, (turns, tokens, cost) in enumerate(zip(
+            turns1, [12368, 43624, 12368], [0.00133, 0.00464, 0.00133])):
+        axes[0].text(i, turns + 0.35,
+                     f"{turns} turns\n{tokens:,} input tok\nUSD {cost:.5f}",
+                     ha="center", va="bottom", fontsize=8.5,
+                     fontweight="bold" if i == 1 else "normal",
+                     color=CORAL if i == 1 else NAVY)
+
+    # Failure 2 looks cheaper, so correctness—not efficiency—exposes it.
+    states2 = ["Working", "Broken", "Restored"]
+    tokens2 = [13253, 9825, 13253]
+    colors2 = [BLUE, CORAL, NAVY]
+    axes[1].bar(states2, tokens2, color=colors2, width=0.58)
+    axes[1].set_title("Failure 2: the wrong outcome appears cheaper",
+                      fontsize=11)
+    axes[1].set_ylabel("Input tokens per run")
+    axes[1].set_ylim(0, 15750)
+    axes[1].grid(axis="y", alpha=0.2)
+    for i, (tokens, calls, cost, outcome) in enumerate(zip(
+            tokens2, [8, 3, 8], [0.001623, 0.001087, 0.001623],
+            ["approve", "WRONG escalate", "approve"])):
+        axes[1].text(i, tokens + 320,
+                     f"{tokens:,} input tok\n{calls} calls · USD {cost:.6f}\n{outcome}",
+                     ha="center", va="bottom", fontsize=8.5,
+                     fontweight="bold" if i == 1 else "normal",
+                     color=CORAL if i == 1 else NAVY)
+
+    fig.suptitle("Broken-state reproductions locate two different failure layers",
+                 fontsize=12.5, y=1.01)
+    fig.text(0.01, -0.035,
+             "Coral marks the deliberately broken implementation; blue and navy "
+             "show the identical working and restored states. Failure 1 is exposed "
+             "by instrumentation; Failure 2 only by the D4 outcome check.",
+             fontsize=8.5, color="#444444")
+    fig.tight_layout()
+    save(fig, "fig_d7_failures.png")
+
+
+def live_battery_summary_plot():
+    """Compact Section 3 comparison of accuracy, Layer-1 cost and latency."""
+    panels = [
+        ("Trial pass rate",
+         [("DeepSeek", 98.9), ("Gemini", 93.3), ("GPT-4o", 66.7),
+          ("Qwen", 54.4), ("Llama", 36.7)], 100,
+         lambda value: f"{value:.1f}%", "DeepSeek"),
+        ("Mean AI cost / run",
+         [("Gemini", 0.00566), ("GPT-4o", 0.00314), ("Qwen", 0.00203),
+          ("DeepSeek", 0.00122), ("Llama", 0.00088)], 0.006,
+         lambda value: f"${value:.5f}", "Llama"),
+        ("Mean latency / run",
+         [("DeepSeek", 54.2), ("Llama", 54.0), ("GPT-4o", 33.8),
+          ("Qwen", 12.3), ("Gemini", 6.9)], 60,
+         lambda value: f"{value:.1f}s", "Gemini"),
+    ]
+
+    fig, axes = plt.subplots(1, 3, figsize=(13.2, 3.5))
+    for ax, (title, rows, maximum, formatter, highlight) in zip(axes, panels):
+        ax.set_xlim(0, 1.58)
+        ax.set_ylim(-0.65, len(rows) - 0.35)
+        ax.axis("off")
+        ax.set_title(title, loc="left", fontsize=12, fontweight="bold",
+                     color=NAVY, pad=12)
+        for index, (label, value) in enumerate(rows):
+            y = len(rows) - 1 - index
+            start, width = 0.50, 0.58
+            ax.text(0, y, label, va="center", fontsize=10, color="#1F1F1F")
+            ax.plot([start, start + width], [y, y], color="#E7EAF0",
+                    linewidth=10, solid_capstyle="round", zorder=1)
+            ax.plot([start, start + width * value / maximum], [y, y],
+                    color=CORAL if label == highlight else NAVY,
+                    linewidth=10, solid_capstyle="round", zorder=2)
+            ax.text(1.16, y, formatter(value), va="center", ha="left",
+                    fontsize=9.5, color="#1F1F1F")
+        for spine in ax.spines.values():
+            spine.set_visible(True)
+            spine.set_color("#CBD3DF")
+            spine.set_linewidth(0.7)
+        ax.patch.set_visible(True)
+        ax.patch.set_facecolor("white")
+
+    fig.text(0.5, 0.01,
+             "Measured trial accuracy, Layer-1 cost, and latency across the "
+             "live battery, current 50-case set.",
+             ha="center", fontsize=10.5, color="#555555", style="italic")
+    fig.tight_layout(rect=(0.01, 0.08, 0.99, 0.98), w_pad=1.2)
+    save(fig, "fig_d5b_cost_latency_accuracy.png")
 
 
 def strict_case_rate(rows):
@@ -176,6 +374,9 @@ def historical_d5_plots():
 def main():
     completed_task_cost_plot()
     turn_token_growth_plot()
+    reliability_curve_plot()
+    failure_reproduction_plot()
+    live_battery_summary_plot()
     historical_d5_plots()
 
 

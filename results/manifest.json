@@ -1,22 +1,118 @@
 {
   "schema_version": 1,
-  "run_date": "2026-09-06",
+  "run_date": "2026-09-09",
   "pricing_source": "OpenRouter /api/v1/models, retrieved 2026-09-06; prices are preserved in harness.py",
-  "evaluation_set": "40 cases: 20 ordinary x1 trial and 20 negative x3 trials = 80 trials",
+  "evaluation_set": "50 cases (30 ordinary x1 trial + 20 negative x3 trials = 90 trials), current as of 2026-09-09. All five D5(b) models plus the D2(b) v1/v2 pair below are re-run against this set.",
+  "original_batch_note": "The first live measurements (run_date 2026-09-06) used an earlier 40-case batch (20 ordinary x1 + 20 negative x3 = 80 trials). All canonical_live_runs below have since been re-run against the current 50-case set. The ranking shifted materially on re-measurement: deepseek-v4-flash moved from third to first (91.25% -> 98.9%, now cheapest and most accurate), and gemini-2.5-flash dropped from 96.25% to 93.3%.",
   "primary_metric": "passing trials / total trials",
   "supplementary_metric": "strict case consistency; every trial for a case must pass",
   "canonical_live_runs": [
-    {"file":"d2b_live_v1_gpt4o_mini.json","purpose":"D2b v1","model":"openai/gpt-4o-mini","family":"OpenAI","prompt_version":"v1","trials":80,"passed_trials":48,"pass_rate":0.6},
-    {"file":"d2b_live_v2_gpt4o_mini.json","purpose":"D2b v2 and D5b","model":"openai/gpt-4o-mini","family":"OpenAI","prompt_version":"v2","trials":80,"passed_trials":55,"pass_rate":0.6875},
-    {"file":"d5b_live_gemini_2.5_flash.json","purpose":"D5b","model":"google/gemini-2.5-flash","family":"Google","prompt_version":"v2","trials":80,"passed_trials":77,"pass_rate":0.9625},
-    {"file":"d5b_live_deepseek_v4_flash.json","purpose":"D5b","model":"deepseek/deepseek-v4-flash","family":"DeepSeek","prompt_version":"v2","trials":80,"passed_trials":73,"pass_rate":0.9125},
-    {"file":"d5b_live_llama_3.1_8b_instruct.json","purpose":"D5b","model":"meta-llama/llama-3.1-8b-instruct","family":"Meta","prompt_version":"v2","trials":80,"passed_trials":39,"pass_rate":0.4875},
-    {"file":"d5b_live_qwen_2.5_7b_instruct.json","purpose":"D5b","model":"qwen/qwen-2.5-7b-instruct","family":"Alibaba/Qwen","prompt_version":"v2","trials":80,"passed_trials":41,"pass_rate":0.5125}
+    {
+      "file": "d2b_live_v1_gpt4o_mini.json",
+      "purpose": "D2b v1 (corrected descriptor)",
+      "model": "openai/gpt-4o-mini",
+      "family": "OpenAI",
+      "prompt_version": "v1",
+      "trials": 90,
+      "passed_trials": 58,
+      "pass_rate": 0.6444444444444445,
+      "run_date": "2026-09-09",
+      "prompt_sha256": "e03721456a3d3afc6e054123bac10a6797e0170fc9bf905b4044e987872f0fbb"
+    },
+    {
+      "file": "d2b_return_shape_v1_gpt4o_mini.json",
+      "purpose": "D2b return-shape v1 (prose, descriptor pinned at v2)",
+      "model": "openai/gpt-4o-mini",
+      "family": "OpenAI",
+      "prompt_version": "v2",
+      "trials": 90,
+      "passed_trials": 63,
+      "pass_rate": 0.7,
+      "run_date": "2026-09-10",
+      "prompt_sha256": "110a33a47daa921f9ad6f89e4f98ad4dcafc72b24175c989edb5359d031775d1"
+    },
+    {
+      "file": "d2b_return_shape_v2_gpt4o_mini.json",
+      "purpose": "D2b return-shape v2 (typed JSON, descriptor pinned at v2)",
+      "model": "openai/gpt-4o-mini",
+      "family": "OpenAI",
+      "prompt_version": "v2",
+      "trials": 90,
+      "passed_trials": 67,
+      "pass_rate": 0.7444444444444445,
+      "run_date": "2026-09-10",
+      "prompt_sha256": "110a33a47daa921f9ad6f89e4f98ad4dcafc72b24175c989edb5359d031775d1"
+    },
+    {
+      "file": "d2b_live_v2_gpt4o_mini.json",
+      "purpose": "D2b v2 and D5b",
+      "model": "openai/gpt-4o-mini",
+      "family": "OpenAI",
+      "prompt_version": "v2",
+      "trials": 90,
+      "passed_trials": 60,
+      "pass_rate": 0.6666666666666666,
+      "run_date": "2026-09-08",
+      "prompt_sha256": "110a33a47daa921f9ad6f89e4f98ad4dcafc72b24175c989edb5359d031775d1"
+    },
+    {
+      "file": "d5b_live_gemini_2.5_flash.json",
+      "purpose": "D5b",
+      "model": "google/gemini-2.5-flash",
+      "family": "Google",
+      "prompt_version": "v2",
+      "trials": 90,
+      "passed_trials": 84,
+      "pass_rate": 0.9333333333333333,
+      "run_date": "2026-09-09",
+      "prompt_sha256": "110a33a47daa921f9ad6f89e4f98ad4dcafc72b24175c989edb5359d031775d1"
+    },
+    {
+      "file": "d5b_live_deepseek_v4_flash.json",
+      "purpose": "D5b",
+      "model": "deepseek/deepseek-v4-flash",
+      "family": "DeepSeek",
+      "prompt_version": "v2",
+      "trials": 90,
+      "passed_trials": 89,
+      "pass_rate": 0.9888888888888889,
+      "run_date": "2026-09-09",
+      "prompt_sha256": "110a33a47daa921f9ad6f89e4f98ad4dcafc72b24175c989edb5359d031775d1"
+    },
+    {
+      "file": "d5b_live_llama_3.1_8b_instruct.json",
+      "purpose": "D5b",
+      "model": "meta-llama/llama-3.1-8b-instruct",
+      "family": "Meta",
+      "prompt_version": "v2",
+      "trials": 90,
+      "passed_trials": 33,
+      "pass_rate": 0.36666666666666664,
+      "run_date": "2026-09-09",
+      "prompt_sha256": "110a33a47daa921f9ad6f89e4f98ad4dcafc72b24175c989edb5359d031775d1"
+    },
+    {
+      "file": "d5b_live_qwen_2.5_7b_instruct.json",
+      "purpose": "D5b",
+      "model": "qwen/qwen-2.5-7b-instruct",
+      "family": "Alibaba/Qwen",
+      "prompt_version": "v2",
+      "trials": 90,
+      "passed_trials": 49,
+      "pass_rate": 0.5444444444444444,
+      "run_date": "2026-09-09",
+      "prompt_sha256": "110a33a47daa921f9ad6f89e4f98ad4dcafc72b24175c989edb5359d031775d1"
+    }
   ],
   "superseded": [
     "d5b_live_smoke_CLM-8842.json",
     "d5b_live_gpt4o_mini_full_battery.json",
     "d5b_live_validation_after_fix.json",
     "d5b_live_validation_after_prompt_fix.json"
-  ]
+  ],
+  "prompt_fingerprint_note": "prompt_sha256 is sha256(config.build_system_prompt()) for v2 rows, sha256(config.build_system_prompt(descriptors_v1.OVERRIDES)) for the v1 row - computed 2026-09-09 from the current, committed config.py and descriptors_v1.py, not captured contemporaneously at each original run. This is an honest limitation, not a claim of live capture: the fingerprint is retroactive, valid because the rendered prompt text has not changed since (verified by matching character count, 8661 for v2) and reproducible by any marker via `python3 -c \"import config,hashlib; print(hashlib.sha256(config.build_system_prompt().encode()).hexdigest())\"`. harness.py --live now prints this same hash for every future run, so this gap does not recur going forward.",
+  "verification_commit": {
+    "sha": "b80ce915282b5b04a01e1f26feffc08ab786a68d",
+    "note": "HEAD at the time this manifest was last updated, not a per-run historical commit (none were captured contemporaneously)."
+  }
 }

@@ -73,6 +73,12 @@ class LiveBackend:
         self.max_tokens = max_tokens
         self.prompt_tokens = 0
         self.completion_tokens = 0
+        # D6's caching/reasoning disclosure needs these to check for either
+        # effect after the fact rather than assume neither occurred. Only
+        # some providers populate these breakdown fields; both stay 0 if
+        # the response doesn't carry them, which is itself the answer.
+        self.cached_tokens = 0
+        self.reasoning_tokens = 0
 
     def generate(self, messages):
         # max_tokens matters beyond cost control here: OpenRouter checks
@@ -101,6 +107,16 @@ class LiveBackend:
             if usage is not None:
                 self.prompt_tokens += usage.prompt_tokens or 0
                 self.completion_tokens += usage.completion_tokens or 0
+                prompt_details = getattr(usage, "prompt_tokens_details", None)
+                if prompt_details is not None:
+                    self.cached_tokens += (
+                        getattr(prompt_details, "cached_tokens", None) or 0)
+                completion_details = getattr(
+                    usage, "completion_tokens_details", None)
+                if completion_details is not None:
+                    self.reasoning_tokens += (
+                        getattr(completion_details, "reasoning_tokens", None)
+                        or 0)
             content = response.choices[0].message.content
             if content is not None:
                 return content

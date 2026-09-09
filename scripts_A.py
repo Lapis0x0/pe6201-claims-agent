@@ -848,3 +848,193 @@ PLANS["CLM-9100"] = _plan(
     },
     preauth_codes=["62480"],
 )
+
+# --- approve_in_principle, round 2 (reaching the 50-case set) -------------
+
+PLANS["CLM-9105"] = _plan(
+    CLAIMS["CLM-9105"], "POL-3310", "approve_in_principle",
+    {
+        "approved_total": 1640,
+        "refused_total": 0,
+        "hospital": "H-207 Mount Elizabeth East, on panel",
+        "policy": "POL-3310 active 2026-04-01 to 2027-03-31, 9,200 remaining",
+        "line_dispositions": [
+            _line("47120", 1200, "approved",
+                  "covered by POL-3310; no pre-authorisation required"),
+            _line("70553", 350, "approved",
+                  "covered by POL-3310; no pre-authorisation and no "
+                  "supporting document required"),
+            _line("80053", 90, "approved",
+                  "covered by POL-3310; no pre-authorisation and no "
+                  "supporting document required"),
+        ],
+        "narrative_check": CLEAN,
+    },
+)
+
+PLANS["CLM-9110"] = _plan(
+    CLAIMS["CLM-9110"], "POL-7220", "approve_in_principle",
+    {
+        "approved_total": 2040,
+        "refused_total": 0,
+        "hospital": "H-207 Mount Elizabeth East, on panel",
+        "policy": "POL-7220 active 2026-02-01 to 2027-01-31, 6,800 remaining",
+        "line_dispositions": [
+            _line("29881", 1900, "approved",
+                  "covered by POL-7220; PA-5640 valid 2026-03-01 to "
+                  "2026-05-31 authorises the date of service 2026-05-01"),
+            _line("99213", 140, "approved",
+                  "covered by POL-7220; requires_preauth no, so no "
+                  "authorisation was sought for this line"),
+        ],
+        "narrative_check": CLEAN,
+    },
+    preauth_codes=["29881"],
+)
+
+PLANS["CLM-9115"] = _plan(
+    CLAIMS["CLM-9115"], "POL-7220", "approve_in_principle",
+    {
+        "approved_total": 980,
+        "refused_total": 0,
+        "hospital": "H-451 Penang Medical, NON-PANEL. Recorded on the "
+                    "decision; it does not change the outcome",
+        "policy": "POL-7220 active 2026-02-01 to 2027-01-31, 6,800 remaining",
+        "line_dispositions": [
+            _line("45378", 980, "approved",
+                  "covered by POL-7220; the required itemised_bill was "
+                  "supplied with the claim"),
+        ],
+        "narrative_check": CLEAN,
+    },
+)
+
+PLANS["CLM-9120"] = _plan(
+    CLAIMS["CLM-9120"], "POL-4102", "approve_in_principle",
+    {
+        "approved_total": 130,
+        "refused_total": 0,
+        "hospital": "H-207 Mount Elizabeth East, on panel",
+        "policy": "POL-4102 active 2026-01-01 to 2026-12-31, 600 remaining "
+                  "of a 6,000 annual limit",
+        "limit_check": "claim total 130 is below the 600 remaining, so the "
+                       "limit is not exceeded",
+        "line_dispositions": [
+            _line("99213", 130, "approved", "covered by POL-4102"),
+        ],
+        "narrative_check": CLEAN,
+    },
+)
+
+PLANS["CLM-9125"] = _plan(
+    CLAIMS["CLM-9125"], "POL-3310", "approve_in_principle",
+    {
+        "approved_total": 1250,
+        "refused_total": 0,
+        "hospital": "H-114 Riverside General, on panel",
+        "policy": "POL-3310 active 2026-04-01 to 2027-03-31, 9,200 remaining",
+        "line_dispositions": [
+            _line("62480", 850, "approved",
+                  "covered by POL-3310; PA-5521 valid 2026-08-01 to "
+                  "2026-10-31 authorises the date of service 2026-10-20; "
+                  "discharge_summary supplied"),
+            _line("70553", 400, "approved",
+                  "covered by POL-3310; no pre-authorisation and no "
+                  "supporting document required"),
+        ],
+        "narrative_check": CLEAN,
+    },
+    preauth_codes=["62480"],
+)
+
+PLANS["CLM-9130"] = _plan(
+    CLAIMS["CLM-9130"], "POL-6001", "approve_in_principle",
+    {
+        "approved_total": 900,
+        "refused_total": 0,
+        "hospital": "H-207 Mount Elizabeth East, on panel",
+        "policy": "POL-6001 active 2026-06-01 to 2027-05-31, 15,000 remaining",
+        "line_dispositions": [
+            _line("15823", 900, "approved",
+                  "covered by POL-6001; not listed under this policy's "
+                  "exclusions, unlike POL-3310 and POL-4102's EX-14 rule"),
+        ],
+        "narrative_check": CLEAN,
+    },
+)
+
+PLANS["CLM-9135"] = _plan(
+    CLAIMS["CLM-9135"], "POL-7220", "approve_in_principle",
+    {
+        "approved_total": 1350,
+        "refused_total": 0,
+        "hospital": "H-114 Riverside General, on panel",
+        "policy": "POL-7220 active 2026-02-01 to 2027-01-31, 6,800 remaining",
+        "line_dispositions": [
+            _line("47120", 1100, "approved",
+                  "covered by POL-7220; no pre-authorisation required"),
+            _line("99213", 160, "approved",
+                  "covered by POL-7220; no pre-authorisation and no "
+                  "supporting document required"),
+            _line("80053", 90, "approved",
+                  "covered by POL-7220; no pre-authorisation and no "
+                  "supporting document required"),
+        ],
+        "narrative_check": CLEAN,
+    },
+)
+
+PLANS["CLM-9140"] = _plan(
+    CLAIMS["CLM-9140"], "POL-3310", "approve_in_principle",
+    {
+        "approved_total": 1050,
+        "refused_total": 0,
+        "hospital": "H-330 Bayfront Specialist, NON-PANEL. Recorded on the "
+                    "decision; it does not change the outcome",
+        "policy": "POL-3310 active 2026-04-01 to 2027-03-31, 9,200 remaining",
+        "line_dispositions": [
+            _line("45378", 1050, "approved",
+                  "covered by POL-3310; the required itemised_bill was "
+                  "supplied with the claim"),
+        ],
+        "narrative_check": CLEAN,
+    },
+)
+
+PLANS["CLM-9145"] = _plan(
+    CLAIMS["CLM-9145"], "POL-6001", "approve_in_principle",
+    {
+        "approved_total": 6900,
+        "refused_total": 0,
+        "hospital": "H-114 Riverside General, on panel",
+        "policy": "POL-6001 active 2026-06-01 to 2027-05-31, 15,000 remaining",
+        "line_dispositions": [
+            _line("27447", 6000, "approved",
+                  "covered by POL-6001; PA-5702 valid 2026-07-01 to "
+                  "2026-12-31 authorises the date of service 2026-09-01; "
+                  "discharge_summary supplied"),
+            _line("45378", 900, "approved",
+                  "covered by POL-6001; the required itemised_bill was "
+                  "supplied with the claim"),
+        ],
+        "narrative_check": CLEAN,
+    },
+    preauth_codes=["27447"],
+)
+
+PLANS["CLM-9150"] = _plan(
+    CLAIMS["CLM-9150"], "POL-4102", "approve_in_principle",
+    {
+        "approved_total": 80,
+        "refused_total": 0,
+        "hospital": "H-207 Mount Elizabeth East, on panel",
+        "policy": "POL-4102 active 2026-01-01 to 2026-12-31, 600 remaining "
+                  "of a 6,000 annual limit",
+        "limit_check": "claim total 80 is below the 600 remaining, so the "
+                       "limit is not exceeded",
+        "line_dispositions": [
+            _line("80053", 80, "approved", "covered by POL-4102"),
+        ],
+        "narrative_check": CLEAN,
+    },
+)

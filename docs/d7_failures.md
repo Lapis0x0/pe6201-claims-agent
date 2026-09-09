@@ -49,16 +49,19 @@ demo's own point: *the broken agent may still produce the correct answer
 but use far more turns/tokens, so pass rate alone may not reveal the
 failure.*
 
-### Turn distribution across the real 40-case evaluation set
+### Turn distribution across the real 50-case evaluation set
 
 ```
-n=40  median=5  min=3  max=6  hit the 15-turn cap: 0/40
+n=50  median=5  min=3  max=6  hit the 15-turn cap: 0/50
 ```
 
-Not one of the 40 real cases comes anywhere near the step cap — the
-farthest any legitimate run gets is 6 turns, 9 turns short of it. That gap
-is what makes `MAX_STEPS = 15` a genuine safety net rather than something
-ordinary claims bump into.
+Unchanged from the 40-case set the cap was originally derived from — the
+ten cases added afterward to reach the 50-case ceiling are all ordinary
+approvals in the same 3–6 turn range, not new extremes. Not one of the 50
+real cases comes anywhere near the step cap — the farthest any legitimate
+run gets is 6 turns, 9 turns short of it. That gap is what makes
+`MAX_STEPS = 15` a genuine safety net rather than something ordinary claims
+bump into.
 
 ### Why the other two loop-control guards would not have caught it as well
 
@@ -67,6 +70,22 @@ ordinary claims bump into.
 | **Action de-duplication** (the actual fix) | **Yes, at turn 5** | Recognises the exact failure signature — the same `(tool, args)` pair, repeated — directly and cheaply. |
 | Step cap (15) | Eventually, at turn 15 | 3.0x later. Stops *any* non-terminating run, but only after the maximum possible cost has already been spent. |
 | Budget ceiling (24 tool calls) | No, not before the step cap | One tool call per turn here, so 15 turns ≤ 24 tool calls — the ceiling never comes close to firing first. |
+
+**The stop is loud, by construction, not by convention.** Every one of
+`agent.py`'s guard-triggered exits — action de-duplication, the step cap,
+the budget ceiling, unparseable output, the gate-not-satisfied case — is a
+`return self._escalate(...)` call (6 call sites, `agent.py`), and
+`_escalate()` always returns a complete `AgentResult`: `decision="escalate"`,
+a named `trigger` identifying which guard fired, and the full message
+trace. There is no code path in this loop that silently returns an empty
+or null answer when a guard fires — the table above shows this directly:
+both the broken run (`repeated_action`) and a hypothetical step-cap-only
+stop (`step_cap_exceeded`) resolve to a visible, named escalation to a
+human assessor, never a blank result. This is the property the brief
+warns is easy to get backwards — "a cap that silently returns an empty
+answer is worse than the loop" — and it holds here because `_escalate()`
+is the loop's *only* non-final-answer exit, not a separate silent path
+some guards use and others skip.
 
 ### The seven questions
 
@@ -92,11 +111,11 @@ ordinary claims bump into.
   correctly, 15 times; the defect is entirely in whether the *loop*
   remembers it already asked, which only the loop can own.
 - **Did the fix introduce regressions?** No. `python3 harness.py` is
-  still 40/40 with `max_repeats` at its normal default (see Verification)
+  still 50/50 with `max_repeats` at its normal default (see Verification)
   — restoring the guard costs nothing, because the turn distribution
   above shows no legitimate case ever gets within 9 turns of triggering
   it.
-- **Did pass rate recover after restoration?** Yes — 40/40, unchanged
+- **Did pass rate recover after restoration?** Yes — 50/50, unchanged
   from before this failure was ever introduced, because the deletion only
   touched a constructor argument passed to a standalone script, never
   `config.MAX_REPEATS` itself.
@@ -169,20 +188,20 @@ well-formed-but-wrong data.
   comparison makes the false-positive class of error **structurally
   impossible** rather than merely discouraged.
 - **Did the fix introduce regressions?** No. `python3 harness.py` is
-  still 40/40 restored (see Verification) — `check_duplicate`'s real
+  still 50/50 restored (see Verification) — `check_duplicate`'s real
   4-fact comparison is the shipped, unmodified code; nothing about
   restoring it changes behaviour on any of the other 39 cases, none of
   which depend on the dropped fact.
 - **Did pass rate recover after restoration?** Yes — `CLM-8960` passes
   (`approve_in_principle`, `approved_total: 1990`, matching D4's answer
   key exactly) once `check_duplicate` is back to comparing all four
-  facts, and the full 40-case set remains 40/40.
+  facts, and the full 50-case set remains 50/50.
 
 ## Verification
 
 ```
 $ python3 failure1_loop.py       # turn distribution, Working/Broken/Restored, both caps compared
 $ python3 failure2_interface.py  # Working/Broken/Restored, tokens/cost/pass now included
-$ python3 harness.py             # unaffected: 40/40
+$ python3 harness.py             # unaffected: 50/50
 $ python3 guardrail_checklist.py # unaffected: 12/12
 ```

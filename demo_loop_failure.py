@@ -25,7 +25,7 @@ def main():
     print()
 
     dist = failure1_loop.turn_distribution()
-    print("First, the real 40-case evaluation set, so the cap has context:")
+    print("First, the real 50-case evaluation set, so the cap has context:")
     print("  median turns: {median}   min: {min}   max: {max}   "
           "hit the {cap}-turn cap: {hit_cap}/{n}".format(
               cap=config.MAX_STEPS, **dist))

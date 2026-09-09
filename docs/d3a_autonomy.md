@@ -18,7 +18,7 @@ for it — not in front of the whole agent.
 `operator_approved` simulates whatever a real deployment would use to know
 a human signed off (a dashboard click, a Slack approval) — there is no UI
 in this system (out of scope, D1's scope boundary), so it is a constructor
-argument on `ClaimsTools`. The harness and all 40 evaluation cases pass
+argument on `ClaimsTools`. The harness and all 50 evaluation cases pass
 `True` by default (a human has already reviewed, the ordinary case this
 system is built for); one guardrail case (`G11`) passes `False` to prove
 the gate actually blocks when that hasn't happened yet.
@@ -68,6 +68,6 @@ CONFIRM mode -> see guardrail case G11: blocked on attempt 1 (no approval yet), 
 ## Verification
 
 ```
-$ python3 harness.py               # unaffected: 40/40 (default operator_approved=True)
+$ python3 harness.py               # unaffected: 50/50 (default operator_approved=True)
 $ python3 guardrail_checklist.py   # 12/12, including G11
 ```

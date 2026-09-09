@@ -47,7 +47,7 @@ def run_once(max_repeats, n_turns=config.MAX_STEPS + 1):
 
 
 def turn_distribution():
-    """The turn distribution across the real 40-case set - none of it
+    """The turn distribution across the real 50-case set - none of it
     anywhere near the step cap. Reuses the shipped trajectories/labels."""
     import json
     expected = json.load(open(config.EXPECTED_OUTCOMES_PATH, encoding="utf-8"))
@@ -71,7 +71,7 @@ def turn_distribution():
 
 def main():
     dist = turn_distribution()
-    print("Turn distribution across the real 40-case evaluation set "
+    print("Turn distribution across the real 50-case evaluation set "
           "(parallel calling):")
     print("  n={n}  median={median}  min={min}  max={max}  "
           "hit the {cap}-turn cap: {hit_cap}/{n}".format(
@@ -136,7 +136,7 @@ def main():
           "again) rather than waiting for a generic ceiling.")
 
     print()
-    print("Pass rate check: the 40-case evaluation set is unaffected by "
+    print("Pass rate check: the 50-case evaluation set is unaffected by "
           "restoring de-duplication, because no legitimate case ever "
           "triggers it (see the turn distribution above - max {} turns, "
           "nowhere near a repeat).".format(dist["max"]))

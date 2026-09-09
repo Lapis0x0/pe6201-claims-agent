@@ -109,12 +109,12 @@ def main():
 
     print("-" * 100)
     saved_total = tot_seq - tot_par
-    print("TOTAL input across 40 cases: parallel {} tokens, sequential {} "
+    print("TOTAL input across {} cases: parallel {} tokens, sequential {} "
           "tokens, saved {} tokens ({:.1f}%)".format(
-              tot_par, tot_seq, saved_total,
+              len(rows), tot_par, tot_seq, saved_total,
               saved_total / tot_seq * 100 if tot_seq else 0))
-    print("TOTAL output across 40 cases: parallel {} tokens, sequential {} "
-          "tokens".format(totals["parallel"]["output_tokens"],
+    print("TOTAL output across {} cases: parallel {} tokens, sequential {} "
+          "tokens".format(len(rows), totals["parallel"]["output_tokens"],
                           totals["sequential"]["output_tokens"]))
 
     if args.json:

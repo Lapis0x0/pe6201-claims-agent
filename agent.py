@@ -161,6 +161,8 @@ class AgentResult:
     trace: list = field(default_factory=list)
     prompt_tokens: int = 0
     completion_tokens: int = 0
+    cached_tokens: int = 0
+    reasoning_tokens: int = 0
     runtime_seconds: float = 0.0
     guardrails_fired: list = field(default_factory=list)
 
@@ -206,6 +208,10 @@ class ClaimsAgent:
         # gate refusal still triggered that guardrail, even though it went
         # on to finish normally.
         self.guardrails_fired = []
+        # The evidence trail issue_decision_letter's own persisted record
+        # cites: every successfully-completed read-only tool call so far,
+        # in order. Stashed onto tools_obj right before the gated write.
+        self._evidence = []
 
     # -- helpers -----------------------------------------------------------
 
@@ -216,7 +222,7 @@ class ClaimsAgent:
     def _call_key(self, name, args):
         return name + " " + json.dumps(args, sort_keys=True, ensure_ascii=False)
 
-    def _dispatch(self, name, args):
+    def _dispatch(self, name, args, step):
         """Run one tool call and return the observation string."""
         if name not in self.tools:
             return (
@@ -257,6 +263,14 @@ class ClaimsAgent:
             )
 
         self.tool_calls += 1
+        if name == "issue_decision_letter":
+            # The gated write reads its own audit trail off tools_obj, so
+            # stash it right before the call - not earlier, since this is
+            # the accurate turn/evidence/cost state at the moment of the
+            # write.
+            self.tools_obj.turn = step
+            self.tools_obj.evidence_calls = list(self._evidence)
+            self.tools_obj.cost_so_far = self._current_cost()
         try:
             observation = str(self.tools[name](**args))
         except NotImplementedError as exc:
@@ -273,6 +287,10 @@ class ClaimsAgent:
                 name, type(exc).__name__, exc)
         if observation.startswith("GATE REFUSED"):
             self.guardrails_fired.append("autonomy_gate")
+        elif name != "issue_decision_letter":
+            # A completed, non-refused read-only call becomes evidence for
+            # whatever decision follows it later in the run.
+            self._evidence.append(name)
         return observation
 
     def _escalate(self, trigger, note, steps, messages):
@@ -289,6 +307,8 @@ class ClaimsAgent:
             trace=messages,
             prompt_tokens=getattr(self.backend, "prompt_tokens", 0),
             completion_tokens=getattr(self.backend, "completion_tokens", 0),
+            cached_tokens=getattr(self.backend, "cached_tokens", 0),
+            reasoning_tokens=getattr(self.backend, "reasoning_tokens", 0),
             runtime_seconds=self._runtime(),
             guardrails_fired=list(self.guardrails_fired),
         )
@@ -297,6 +317,19 @@ class ClaimsAgent:
 
     def _runtime(self):
         return time.time() - self._start_time if self._start_time else 0.0
+
+    def _current_cost(self):
+        """Cost accrued so far this run, for the gated action's own record.
+
+        0.0 on the scripted backend (no tokens spent, no .model attribute to
+        price against) and on any model not in config.PRICE_PER_MILLION
+        (unpriced, not guessed at)."""
+        model = getattr(self.backend, "model", None)
+        if model is None:
+            return 0.0
+        value = config.cost_usd(
+            model, self.backend.prompt_tokens, self.backend.completion_tokens)
+        return value if value is not None else 0.0
 
     def run(self):
         self._start_time = time.time()
@@ -350,7 +383,7 @@ class ClaimsAgent:
 
             observations = []
             for name, args in parsed.actions:
-                observation = self._dispatch(name, args)
+                observation = self._dispatch(name, args, step)
                 self._log("Observation ({}): {}".format(name, observation))
                 observations.append(
                     "Observation [{}]: {}".format(name, observation))
@@ -420,6 +453,8 @@ class ClaimsAgent:
             trace=messages,
             prompt_tokens=getattr(self.backend, "prompt_tokens", 0),
             completion_tokens=getattr(self.backend, "completion_tokens", 0),
+            cached_tokens=getattr(self.backend, "cached_tokens", 0),
+            reasoning_tokens=getattr(self.backend, "reasoning_tokens", 0),
             runtime_seconds=self._runtime(),
             guardrails_fired=list(self.guardrails_fired),
         )

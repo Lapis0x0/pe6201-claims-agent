@@ -27,18 +27,22 @@ VOLUME_PER_MONTH = 8000
 FAILURE_COST = 38.0 * 12 / 60           # claims assessor, $38/h, 12 min = $7.60
 
 # Layer 3: no server (fixture files + a scripted harness cost nothing to
-# run). The only recurring cost is a periodic live re-run of the evaluation
-# battery for regression monitoring - assume monthly, on the cheapest
-# measured model, 40 cases x 1 trial. STATED ASSUMPTION, not a measurement;
-# the brief does not fix a figure for this layer.
+# run). A periodic live re-run of the evaluation battery for regression
+# monitoring is part of this, but is not the whole of it - at the cheapest
+# measured model (deepseek-v4-flash, L1 ~$0.0012/run), 50 cases costs about
+# $0.06, nowhere near $5. $5.00/month is better read as a stated monitoring/
+# maintenance ALLOWANCE the battery re-run is drawn from, not a claim that
+# the re-run itself costs $5. STATED ASSUMPTION, not a measurement; the
+# brief does not fix a figure for this layer.
 LAYER_3_MONTHLY = 5.00
 
-# Operational cap per policy member, stated as required by D6.  At the
-# selected model's measured expected cost ($0.2909/claim), US$1 funds three
-# average claims in a calendar month.  A fourth claim is routed to the normal
-# human process before further AI spend.  This is a cost-model/governance
-# assumption, not a database feature (persistent user accounts are out of
-# scope for A2).
+# Operational cap per policy member, stated as required by D6. At the
+# cheapest-overall model's measured total expected cost/task ($0.0857/claim,
+# deepseek-v4-flash - see d6_notes.md), US$1 funds roughly 11-12 average
+# claims in a calendar month. Additional claims beyond the cap route to the
+# normal human process before further AI spend. This is a cost-model/
+# governance assumption, not a database feature (persistent user accounts
+# are out of scope for A2).
 MONTHLY_PER_USER_SPEND_CAP = 1.00
 
 # The five D5(b) models plus the two D2(b) prompt-version runs, each
@@ -148,8 +152,14 @@ def main():
         print("{:<12}{:>8.1%}{:>14.4f}{:>18.4f}{:>16.2f}".format(label, p, l2, cps, m))
     print()
 
-    # -- Break-even: every other model vs the strongest (gemini) -----------
-    exp_name = "gemini-2.5-flash"
+    # -- Break-even: every other model vs whichever is cheapest overall ----
+    # Picked dynamically, not hand-named: the cheapest model by total
+    # cost/task can change as p is re-measured (it moved from gemini to
+    # deepseek on the 50-case re-run), and a hardcoded benchmark would go
+    # stale silently.
+    exp_name = min(
+        (name for name in measured if "v1 prompt" not in name),
+        key=lambda name: measured[name]["l1"] + layer2_fallback(measured[name]["p"]))
     exp = measured[exp_name]
     print("Break-even success rate: what would each OTHER model need to "
           "reach to match {}'s total cost/task (p={:.1%}, L1=${:.5f}/run)?".format(

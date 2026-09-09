@@ -747,5 +747,195 @@
         "amount": 700
       }
     ]
+  },
+  {
+    "claim_id": "CLM-9105",
+    "member_id": "M-2214",
+    "hospital_id": "H-207",
+    "date_of_service": "2026-10-05",
+    "narrative": "Three separate outpatient items on one visit.",
+    "documents": [
+      "itemised_bill"
+    ],
+    "lines": [
+      {
+        "code": "47120",
+        "amount": 1200
+      },
+      {
+        "code": "70553",
+        "amount": 350
+      },
+      {
+        "code": "80053",
+        "amount": 90
+      }
+    ]
+  },
+  {
+    "claim_id": "CLM-9110",
+    "member_id": "M-6118",
+    "hospital_id": "H-207",
+    "date_of_service": "2026-05-01",
+    "narrative": "Knee scope, authorisation obtained earlier in the year, plus a short consultation on the same visit.",
+    "documents": [
+      "itemised_bill"
+    ],
+    "lines": [
+      {
+        "code": "29881",
+        "amount": 1900
+      },
+      {
+        "code": "99213",
+        "amount": 140
+      }
+    ]
+  },
+  {
+    "claim_id": "CLM-9115",
+    "member_id": "M-6118",
+    "hospital_id": "H-451",
+    "date_of_service": "2026-11-02",
+    "narrative": "Colonoscopy while travelling; nearest hospital available.",
+    "documents": [
+      "itemised_bill"
+    ],
+    "lines": [
+      {
+        "code": "45378",
+        "amount": 980
+      }
+    ]
+  },
+  {
+    "claim_id": "CLM-9120",
+    "member_id": "M-3390",
+    "hospital_id": "H-207",
+    "date_of_service": "2026-07-05",
+    "narrative": "Short consultation.",
+    "documents": [
+      "itemised_bill"
+    ],
+    "lines": [
+      {
+        "code": "99213",
+        "amount": 130
+      }
+    ]
+  },
+  {
+    "claim_id": "CLM-9125",
+    "member_id": "M-2214",
+    "hospital_id": "H-114",
+    "date_of_service": "2026-10-20",
+    "narrative": "Back procedure, authorisation on file, plus a scan on the same admission.",
+    "documents": [
+      "itemised_bill",
+      "discharge_summary"
+    ],
+    "lines": [
+      {
+        "code": "62480",
+        "amount": 850
+      },
+      {
+        "code": "70553",
+        "amount": 400
+      }
+    ]
+  },
+  {
+    "claim_id": "CLM-9130",
+    "member_id": "M-5502",
+    "hospital_id": "H-207",
+    "date_of_service": "2026-08-15",
+    "narrative": "Minor cosmetic procedure.",
+    "documents": [
+      "itemised_bill"
+    ],
+    "lines": [
+      {
+        "code": "15823",
+        "amount": 900
+      }
+    ]
+  },
+  {
+    "claim_id": "CLM-9135",
+    "member_id": "M-6118",
+    "hospital_id": "H-114",
+    "date_of_service": "2026-12-01",
+    "narrative": "Three outpatient items on one visit.",
+    "documents": [
+      "itemised_bill"
+    ],
+    "lines": [
+      {
+        "code": "47120",
+        "amount": 1100
+      },
+      {
+        "code": "99213",
+        "amount": 160
+      },
+      {
+        "code": "80053",
+        "amount": 90
+      }
+    ]
+  },
+  {
+    "claim_id": "CLM-9140",
+    "member_id": "M-2214",
+    "hospital_id": "H-330",
+    "date_of_service": "2026-11-15",
+    "narrative": "Colonoscopy, paid myself at a non-panel hospital.",
+    "documents": [
+      "itemised_bill"
+    ],
+    "lines": [
+      {
+        "code": "45378",
+        "amount": 1050
+      }
+    ]
+  },
+  {
+    "claim_id": "CLM-9145",
+    "member_id": "M-5502",
+    "hospital_id": "H-114",
+    "date_of_service": "2026-09-01",
+    "narrative": "Knee replacement, authorisation already on file, plus a colonoscopy on the same admission.",
+    "documents": [
+      "itemised_bill",
+      "discharge_summary"
+    ],
+    "lines": [
+      {
+        "code": "27447",
+        "amount": 6000
+      },
+      {
+        "code": "45378",
+        "amount": 900
+      }
+    ]
+  },
+  {
+    "claim_id": "CLM-9150",
+    "member_id": "M-3390",
+    "hospital_id": "H-207",
+    "date_of_service": "2026-03-10",
+    "narrative": "Routine blood panel.",
+    "documents": [
+      "itemised_bill"
+    ],
+    "lines": [
+      {
+        "code": "80053",
+        "amount": 80
+      }
+    ]
   }
 ]

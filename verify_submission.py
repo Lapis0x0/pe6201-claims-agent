@@ -29,7 +29,16 @@ def validate_evidence():
     assert judgement["passed"] == 2 and judgement["total"] == 10
     assert len(judgement["results"]) == 10
     assert sum(row["verdict"] == "PASS" for row in judgement["results"]) == 2
-    print("\nCommitted evidence: manifest valid; judgement checks recorded (2/10).")
+
+    judgement2 = json.loads(
+        (ROOT / "results" / "judgement_checks_gpt4o_mini.json").read_text()
+    )
+    assert judgement2["passed"] == 0 and judgement2["total"] == 10
+    assert len(judgement2["results"]) == 10
+    assert sum(row["verdict"] == "PASS" for row in judgement2["results"]) == 0
+
+    print("\nCommitted evidence: manifest valid; judgement checks recorded "
+          "(2/20 across two graders and two models).")
 
 
 def main():

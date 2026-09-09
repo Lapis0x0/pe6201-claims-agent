@@ -17,6 +17,34 @@ EXPECTED_OUTCOMES_PATH = os.path.join(REPO_ROOT, "expected_outcomes_A.json")
 # It is a local simulation: no letter is sent and no live system is touched.
 DECISIONS_PATH = os.path.join(REPO_ROOT, "decisions.jsonl")
 
+# --- pricing ---------------------------------------------------------------
+
+# USD per million tokens (in, out). Only the models this project has
+# actually measured against - not a general-purpose price list. Lives here,
+# not in harness.py, so both the evaluation harness and the agent loop's own
+# gated-action record (D1's decisions.jsonl "cost_usd" field) read the same
+# single source rather than two copies that could drift.
+PRICE_PER_MILLION = {
+    # (prompt $/M, completion $/M) - fetched from OpenRouter's /api/v1/models
+    # on 2026-09-06, the day of the live battery these prices priced.
+    "openai/gpt-4o-mini": (0.15, 0.60),
+    "deepseek/deepseek-chat": (0.14, 0.28),
+    "google/gemini-2.5-flash": (0.30, 2.50),
+    "deepseek/deepseek-v4-flash": (0.08078, 0.16156),
+    "meta-llama/llama-3.1-8b-instruct": (0.05, 0.08),
+    "qwen/qwen-2.5-7b-instruct": (0.10, 0.20),
+}
+
+
+def cost_usd(model, prompt_tokens, completion_tokens):
+    """None if the model isn't in PRICE_PER_MILLION - report "unknown", not
+    a silently wrong number."""
+    prices = PRICE_PER_MILLION.get(model)
+    if prices is None:
+        return None
+    price_in, price_out = prices
+    return prompt_tokens / 1e6 * price_in + completion_tokens / 1e6 * price_out
+
 # --- decision vocabulary -------------------------------------------------
 
 DECISIONS = (
@@ -46,7 +74,7 @@ ESCALATION_TRIGGERS = BUSINESS_TRIGGERS + LOOP_CONTROL_TRIGGERS
 # --- guardrail caps (D3a) ------------------------------------------------
 #
 # Justified against measured run statistics, not chosen as round numbers
-# (failure1_loop.py; the full 40-case evaluation set, parallel calling):
+# (failure1_loop.py; the full 50-case evaluation set, parallel calling):
 #   median turns  5   min 3   max 6     (max 10 under --sequential)
 #   median tools  5   (see harness.py's D4 summary table)
 # MAX_STEPS=15 is 2.5x the worst legitimate run observed (6) - generous
@@ -85,8 +113,14 @@ MAX_PARSE_FAILURES = 2  # consecutive unparseable responses before escalating
 AUTONOMY_SETTINGS = ("suggest", "confirm", "act")
 AUTONOMY = "confirm"
 
-# --- live backend defaults ----------------------------------------------
+# --- backend selection -----------------------------------------------------
+# The brief's BACKEND / MODEL / BASE_URL block, one place, copy-Class-4
+# style. BACKEND is the literal default this repository ships with -
+# "scripted": no key, no network, D5(a)'s reproducibility guarantee.
+# harness.py's --live flag is the only thing that overrides it to "live"
+# for one run; nothing else in this repository changes it.
 
+BACKEND = "scripted"           # "scripted" | "live" - the only two values
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL = "openai/gpt-4o-mini"
 DEFAULT_TEMPERATURE = 0
@@ -121,7 +155,7 @@ DEFAULT_MAX_TOKENS = 1024
 #
 # This list held a seventh entry, get_claim, cut under D2(a): the full claim
 # is already in the first user message (see format_claim_prompt below), and
-# get_claim was called zero times across all 15 shipped scripted
+# get_claim was called zero times across all 50 shipped scripted
 # trajectories. See d2_tool_analysis.md for the full scoring table.
 
 TOOL_SPECS = [
@@ -173,11 +207,13 @@ TOOL_SPECS = [
             "of the two was not found."
         ),
         "returns": (
-            "one line: the procedure description, whether the policy excludes "
-            "it and under which rule, requires_preauth yes/no, and the "
-            "required supporting document or none. "
-            "SIZE BOUND: one line item, at most 145 characters (~36 tokens), "
-            "measured over all 50 policy x procedure pairs."
+            "one line item: the procedure description, whether the policy "
+            "excludes it and under which rule, requires_preauth yes/no, and "
+            "the required supporting document or none. "
+            "SIZE BOUND, measured over all 50 policy x procedure pairs: at "
+            "most 145 characters (~36 tokens) as a sentence, or 216 "
+            "characters (~54 tokens) as typed JSON depending on the "
+            "deployed return-shape version - see docs/d2b_return_shape.md."
         ),
         "fails_when": (
             "no policy carries that policy_id, or no procedure carries that "
@@ -280,7 +316,7 @@ TOOL_SPECS = [
             "one line: either MATCH naming the prior claim, its decision and "
             "the four facts that matched, or NO MATCH. "
             "SIZE BOUND: at most one prior claim, at most 197 characters "
-            "(~49 tokens), measured over all 15 shipped claims."
+            "(~50 tokens), measured over all 50 shipped claims."
         ),
         "fails_when": (
             "never returns nothing. No duplicate is reported as NO MATCH, "
