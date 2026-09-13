@@ -8,6 +8,7 @@ Run: python3 generate_plots.py
 """
 
 import json
+import math
 import os
 from collections import Counter
 from pathlib import Path
@@ -17,7 +18,11 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from d6_cost_model import RUNS, measure_run
+from d6_cost_model import (
+    RUNS, measure_run, layer2_fallback, cost_per_successful_task,
+    monthly_cost, break_even_success_rate, VOLUME_PER_MONTH,
+)
+from measure_parallel import measure_all
 
 
 ROOT = Path(__file__).resolve().parent
@@ -28,7 +33,7 @@ LIGHT_BLUE = "#A8C7DD"
 CORAL = "#E07A5F"
 NAVY = "#273043"
 GREY = "#8B9098"
-B = 2165
+B = 2198
 D = 176
 
 
@@ -123,7 +128,7 @@ def turn_token_growth_plot():
     ax.grid(axis="y", alpha=0.25)
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(0, 0.84))
     ax.text(0.01, -0.20,
-            "Formula: B x T + D x T(T-1)/2. Measured B = 2,165; "
+            "Formula: B x T + D x T(T-1)/2. Measured B = 2,198; "
             "representative D = 176 tokens/turn (median, parallel trajectories).",
             transform=ax.transAxes, fontsize=9, color="#444444")
     fig.tight_layout()
@@ -241,8 +246,10 @@ def failure_reproduction_plot():
                      color=CORAL if i == 1 else NAVY)
 
     # Failure 2 looks cheaper, so correctness—not efficiency—exposes it.
+    # Numbers must match docs/d7_failures.md and Table 5b of the report
+    # exactly - this chart, not the prose, is what a reader compares first.
     states2 = ["Working", "Broken", "Restored"]
-    tokens2 = [13253, 9825, 13253]
+    tokens2 = [13093, 9697, 13093]
     colors2 = [BLUE, CORAL, NAVY]
     axes[1].bar(states2, tokens2, color=colors2, width=0.58)
     axes[1].set_title("Failure 2: the wrong outcome appears cheaper",
@@ -251,7 +258,7 @@ def failure_reproduction_plot():
     axes[1].set_ylim(0, 15750)
     axes[1].grid(axis="y", alpha=0.2)
     for i, (tokens, calls, cost, outcome) in enumerate(zip(
-            tokens2, [8, 3, 8], [0.001623, 0.001087, 0.001623],
+            tokens2, [8, 3, 8], [0.00161, 0.00108, 0.00161],
             ["approve", "WRONG escalate", "approve"])):
         axes[1].text(i, tokens + 320,
                      f"{tokens:,} input tok\n{calls} calls · USD {cost:.6f}\n{outcome}",
@@ -371,6 +378,243 @@ def historical_d5_plots():
     save(fig, "fig_d5b_failure_reasons.png")
 
 
+def descriptor_v1_v2_live_plot():
+    """D2(b) live comparison - the original bubble-chart design, ported
+    verbatim from A2_analysis.ipynb cell 2e794bff into this module so it is
+    reproducible from one source instead of only existing in a notebook
+    that has to be run by hand.
+    """
+    import matplotlib.patheffects as pe
+    from matplotlib.colors import LinearSegmentedColormap
+
+    modern_cmap = LinearSegmentedColormap.from_list(
+        "modern", ["#E07A5F", "#A8C7DD", "#78A6C8"])
+
+    v1_live = measure_run("openai/gpt-4o-mini", "d2b_live_v1_gpt4o_mini.json")
+    v2_live = measure_run("openai/gpt-4o-mini", "d2b_live_v2_gpt4o_mini.json")
+
+    fig, ax = plt.subplots(figsize=(7.5, 6))
+    fig.patch.set_facecolor("#fbfbfd")
+    ax.set_facecolor("#fbfbfd")
+
+    xs = [v1_live["l1"], v2_live["l1"]]
+    ys = [v1_live["latency"], v2_live["latency"]]
+    x_pad = (max(xs) - min(xs)) * 1.6 or max(xs) * 0.2
+    y_pad = (max(ys) - min(ys)) * 1.6 or max(ys) * 0.2
+    xlim = (min(xs) - x_pad, max(xs) + x_pad)
+    ylim = (min(ys) - y_pad, max(ys) + y_pad * 2.2)
+
+    for label, d in [("v1 (vague)", v1_live), ("v2 (current)", v2_live)]:
+        x, y, p = d["l1"], d["latency"], d["p"]
+        size = 900 + p * 3800
+        radius_pts = math.sqrt(size / math.pi)
+        dy = radius_pts + 14
+        ax.scatter(x, y, s=size * 1.12, color="#000000", alpha=0.06, zorder=2, linewidths=0)
+        ax.scatter(x, y, s=size, c=[p], cmap=modern_cmap, vmin=0.5, vmax=0.8,
+                   edgecolors="white", linewidths=2.5, alpha=0.95, zorder=3)
+        ax.annotate(label, (x, y), xytext=(0, dy), textcoords="offset points",
+                    ha="center", fontsize=11, fontweight="medium", color="#212529",
+                    bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="#e9ecef", lw=0.8))
+        ax.annotate("{:.0f}%".format(p * 100), (x, y), ha="center", va="center",
+                    fontsize=11, fontweight="bold", color="white",
+                    path_effects=[pe.withStroke(linewidth=2.5, foreground="#00000055")])
+
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    for spine in ("top", "right"):
+        ax.spines[spine].set_visible(False)
+    for spine in ("left", "bottom"):
+        ax.spines[spine].set_color("#ced4da")
+    ax.tick_params(colors="#495057")
+    ax.grid(axis="both", alpha=0.15, zorder=0)
+    ax.set_xlabel("cost per run, USD", fontsize=11, color="#495057")
+    ax.set_ylabel("average latency, seconds/run", fontsize=11, color="#495057")
+
+    fig.suptitle("Descriptor v1 vs v2, openai/gpt-4o-mini",
+                 fontsize=15, fontweight="bold", color="#212529", x=0.02, ha="left", y=1.02)
+    ax.set_title("bubble size and colour = case-level pass rate", fontsize=10,
+                 color="#868e96", loc="left", pad=12)
+
+    sm = plt.cm.ScalarMappable(cmap=modern_cmap, norm=plt.Normalize(vmin=0.5, vmax=0.8))
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=ax, pad=0.03)
+    cbar.set_label("case-level pass rate", color="#495057")
+    cbar.ax.tick_params(colors="#495057")
+    cbar.outline.set_visible(False)
+
+    fig.tight_layout()
+    fig.savefig(FIGS / "fig_d2b_live_v1_v2.png", bbox_inches="tight",
+                facecolor=fig.get_facecolor(), dpi=180)
+    plt.close(fig)
+    print("plot written to", FIGS / "fig_d2b_live_v1_v2.png")
+
+
+def d2c_per_case_plot():
+    """D2(c) per-case token comparison, all cases in the CURRENT set."""
+    rows, _ = measure_all()
+    case_ids = [r["case_id"] for r in rows]
+    par_tokens = [r["parallel"]["input_tokens_est"] for r in rows]
+    seq_tokens = [r["sequential"]["input_tokens_est"] for r in rows]
+
+    order_idx = sorted(range(len(rows)), key=lambda i: seq_tokens[i])
+    sorted_ids = [case_ids[i] for i in order_idx]
+    sorted_par = [par_tokens[i] for i in order_idx]
+    sorted_seq = [seq_tokens[i] for i in order_idx]
+
+    fig, ax = plt.subplots(figsize=(14, 5))
+    x = range(len(sorted_ids))
+    ax.bar([i - 0.2 for i in x], sorted_seq, width=0.4,
+           label="sequential", color=CORAL)
+    ax.bar([i + 0.2 for i in x], sorted_par, width=0.4,
+           label="parallel", color=BLUE)
+    ax.set_xticks(list(x))
+    ax.set_xticklabels(sorted_ids, rotation=90, fontsize=7)
+    ax.set_ylabel("input tokens (measured)")
+    ax.set_title(
+        "D2(c) - input tokens per case, parallel vs sequential "
+        "(all {} cases)".format(len(rows)))
+    ax.grid(axis="y", alpha=0.2)
+    ax.legend(frameon=False)
+    fig.tight_layout()
+    save(fig, "fig_d2c_per_case.png")
+
+
+def cost_sensitivity_plot():
+    """D6 sensitivity: GPT-4o-mini's measured p, +-10 percentage points.
+
+    This is what the report's Figure 6 caption ("Success-rate sensitivity
+    around GPT-4o-mini") actually promises - the previous fig_d6_sensitivity
+    .png instead showed the five-model monthly-cost ranking, a different
+    chart under the caption's name.
+    """
+    base = measure_run(*RUNS["gpt-4o-mini"])
+    p0 = base["p"]
+    scenarios = [("Downside", max(0.0, p0 - 0.10)),
+                 ("Measured", p0),
+                 ("Upside", min(1.0, p0 + 0.10))]
+    monthly = [monthly_cost(base["l1"], p) for _, p in scenarios]
+    colors = [GREY, CORAL, GREY]
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+    labels = [name for name, _ in scenarios]
+    ax.bar(labels, monthly, color=colors, width=0.55)
+    for i, ((_, p), m) in enumerate(zip(scenarios, monthly)):
+        ax.text(i, m + max(monthly) * 0.015,
+                "p={:.1%}\n${:,.0f}/mo".format(p, m), ha="center", fontsize=9)
+    ax.set_ylabel("monthly cost, USD ({:,} claims/month)".format(VOLUME_PER_MONTH))
+    ax.set_title("D6 - cost sensitivity to success rate, GPT-4o-mini +-10pp")
+    ax.set_ylim(0, max(monthly) * 1.2)
+    ax.grid(axis="y", alpha=0.2)
+    fig.tight_layout()
+    save(fig, "fig_d6_sensitivity.png")
+
+
+def monthly_cost_by_model_plot():
+    """D6 monthly cost across all five models - horizontal bars, ranked
+    cheapest first, one label per bar (cost + measured pass rate), with the
+    formula stated on the chart. A different question from
+    cost_sensitivity_plot() (which stress-tests ONE model's accuracy
+    estimate): this one compares ACROSS models, at each model's own
+    measured pass rate, so the two are not substitutes for each other.
+    """
+    measured = {name: measure_run(model, fname) for name, (model, fname) in RUNS.items()
+                if "v1 prompt" not in name}
+    ranked = sorted(measured.items(), key=lambda kv: kv[1]["l1"] + layer2_fallback(kv[1]["p"]))
+    names = [n for n, _ in ranked][::-1]  # cheapest at top of a horizontal chart
+    data = [d for _, d in ranked][::-1]
+    monthly = [monthly_cost(d["l1"], d["p"]) for d in data]
+    # names/data/monthly are ordered most-expensive-first (index 0) so that,
+    # with barh's y=0-at-bottom convention, the cheapest model (last index)
+    # lands at the TOP of the chart - so the highlight goes on the LAST bar.
+    colors = [NAVY] * (len(names) - 1) + [CORAL]
+
+    fig, ax = plt.subplots(figsize=(9.5, 5.2))
+    y = range(len(names))
+    bars = ax.barh(list(y), monthly, color=colors, height=0.6)
+    ax.set_yticks(list(y))
+    ax.set_yticklabels(names, fontsize=11)
+    ax.set_xlabel("Expected monthly cost, USD ({:,} claims/month)".format(VOLUME_PER_MONTH))
+    ax.grid(axis="x", alpha=0.25)
+    for spine in ("top", "right", "left"):
+        ax.spines[spine].set_visible(False)
+    max_m = max(monthly)
+    for yi, (name, d, m) in enumerate(zip(names, data, monthly)):
+        ax.text(m + max_m * 0.015, yi, "${:,.0f}/mo  |  Pass: {:.1%}".format(m, d["p"]),
+                va="center", fontsize=10.5, color=NAVY)
+    ax.set_xlim(0, max_m * 1.32)
+    fig.text(0.01, 0.01,
+             "Expected monthly cost = V x [C_AI + (1-p) x C_fallback] + F   "
+             "(V = claim volume, p = trial-level pass rate; human fallback dominates token cost)",
+             fontsize=9.5, color="#444444")
+    fig.suptitle("Claims First-Response Agent: Expected Monthly Cost by Model",
+                 fontsize=15, fontweight="bold", x=0.01, ha="left", y=0.99)
+    # Escape literal "$" - matplotlib's mathtext treats a PAIR of $ as an
+    # equation span and silently drops the spaces inside it otherwise.
+    fig.text(0.01, 0.925,
+             "Assumptions: {:,} claims/month  |  \\${:.2f} human fallback per failed claim  |  "
+             "\\$5 monthly regression testing".format(VOLUME_PER_MONTH, 7.60),
+             fontsize=10.5, color=GREY)
+    fig.tight_layout(rect=(0, 0.05, 1, 0.90))
+    save(fig, "fig_d6_monthly_by_model.png")
+
+
+def breakeven_plot():
+    """D6 break-even success rate, benchmarked against whichever model is
+    CURRENTLY cheapest overall - computed the same way d6_cost_model.py
+    picks it (a min() over measured total cost/task), not a hardcoded name.
+    The previous version of this figure hardcoded "gemini-2.5-flash" as the
+    benchmark; deepseek-v4-flash overtook it on the current 50-case
+    measurement and the figure was never regenerated, so it silently
+    disagreed with the report's own text and tables.
+    """
+    measured = {name: measure_run(model, fname)
+                for name, (model, fname) in RUNS.items()
+                if "v1 prompt" not in name}
+    exp_name = min(measured, key=lambda n: measured[n]["l1"] + layer2_fallback(measured[n]["p"]))
+    exp = measured[exp_name]
+
+    cheaper = [(n, d) for n, d in measured.items() if n != exp_name]
+    cheaper.sort(key=lambda kv: kv[1]["p"])
+    be_names = [n for n, _ in cheaper]
+    current_p = [d["p"] * 100 for _, d in cheaper]
+    break_even_p = [break_even_success_rate(d["l1"], exp["p"], exp["l1"]) * 100
+                    for _, d in cheaper]
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    x = list(range(len(be_names)))
+    ax.bar([i - 0.2 for i in x], current_p, width=0.4,
+           label="currently at", color=BLUE)
+    ax.bar([i + 0.2 for i in x], break_even_p, width=0.4,
+           label="needs to reach", color=NAVY)
+    ax.axhline(exp["p"] * 100, linestyle="--", color=GREY, linewidth=1.3,
+               label="{}'s own p ({:.1f}%)".format(exp_name, exp["p"] * 100))
+    for i, (now, be) in enumerate(zip(current_p, break_even_p)):
+        ax.text(i - 0.2, now + 1.5, "{:.1f}%".format(now), ha="center", fontsize=8.5)
+        ax.text(i + 0.2, be + 1.5, "{:.1f}%".format(be), ha="center", fontsize=8.5)
+        # The story here is the GAP, not the bar heights - every "needs to
+        # reach" bar sits near the benchmark's own p almost by construction
+        # (failure cost swamps token price), so an unlabelled reader can
+        # easily mistake four near-identical bars for a rendering error
+        # rather than the actual finding. Spell the gap out explicitly.
+        ax.annotate("", xy=(i, be + 1.5), xytext=(i, now - 1.5),
+                    arrowprops=dict(arrowstyle="-|>", color=CORAL, linewidth=1.4,
+                                     shrinkA=0, shrinkB=0))
+        ax.text(i, (now + be) / 2 - 6, "+{:.1f}pp".format(be - now),
+                ha="center", fontsize=9, fontweight="bold", color=CORAL)
+    ax.set_xticks(x)
+    ax.set_xticklabels(be_names, rotation=20, ha="right")
+    ax.set_ylabel("success rate (%)")
+    ax.set_title(
+        "D6 - break-even p to match {}'s total cost/task".format(exp_name),
+        pad=12)
+    ax.set_ylim(0, 128)
+    ax.legend(frameon=True, facecolor="white", edgecolor="#DDDDDD",
+              loc="upper right", fontsize=9)
+    ax.grid(alpha=0.2, axis="y")
+    fig.tight_layout()
+    save(fig, "fig_d6_breakeven.png")
+
+
 def main():
     completed_task_cost_plot()
     turn_token_growth_plot()
@@ -378,6 +622,11 @@ def main():
     failure_reproduction_plot()
     live_battery_summary_plot()
     historical_d5_plots()
+    descriptor_v1_v2_live_plot()
+    d2c_per_case_plot()
+    cost_sensitivity_plot()
+    monthly_cost_by_model_plot()
+    breakeven_plot()
 
 
 if __name__ == "__main__":
