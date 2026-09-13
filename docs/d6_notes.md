@@ -151,9 +151,9 @@ model on top.
 
 | Lever | What it attacks | Before | After | Change |
 |---|---|---|---|---|
-| **1. Tool block size** | `B`, re-sent every turn | 7 tools, stub descriptors: **1,996 tokens** | 6 tools, full descriptors (current): **2,165 tokens** | **+169 tokens/turn, net** — see the split below |
-| **2. Turn count** | The quadratic term | Sequential: **828,709** input tokens over 50 cases | Parallel: **648,376** input tokens over 50 cases | **-180,333 tokens (-21.8%)** |
-| **3. Observation/descriptor size** | Compounds every later turn | Actual return: **median 113 chars (~29 tokens), max 145 (~37)** | **Identical** in v2; descriptor alone changed | **0 observation-token change**; with the corrected v1 control, v2's system prompt is only 57 tokens larger overall and trial pass rate improves **66.7% vs 64.4%** (+2.3pp) — see below |
+| **1. Tool block size** | `B`, re-sent every turn | 7 tools, stub descriptors: **2,095 tokens** | 6 tools, full descriptors (current): **2,264 tokens** | **+169 tokens/turn, net** — see the split below |
+| **2. Turn count** | The quadratic term | Sequential: **860,782** input tokens over 50 cases | Parallel: **673,615** input tokens over 50 cases | **-187,167 tokens (-21.7%)** |
+| **3. Observation/descriptor size** | Compounds every later turn | Actual return: **median 113 chars (~29 tokens), max 145 (~37)** | **Identical** in v2; descriptor alone changed | **0 observation-token change**; with the corrected v1 control, v2's system prompt is only 88 tokens larger overall (2,176 vs 2,264) and trial pass rate improves **66.7% vs 64.4%** (+2.3pp) — see below |
 | **4. Success rate** | Sets layer 2, the largest layer by far | Weakest trial rate (llama, 36.67%): **$4.814/task, $38,519/mo** | Strongest (deepseek, 98.89%): **$0.086/task, $690/mo** | **-$37,829/month (-98.2%)** — by far the largest lever |
 
 ### Lever 1, split into its two real causes
@@ -162,9 +162,9 @@ The net "+169 tokens/turn" hides two opposite effects, both measured
 exactly (`d6_cost_model.py`'s reconstruction):
 
 ```
-7 tools, stub descriptors (before any D2 work): 1,996 tokens
-6 tools, stub descriptors (D2a's cut, isolated): 1,900 tokens   (-96 tokens)
-6 tools, full descriptors  (D2b's fill-in, isolated, current):  2,165 tokens  (+265 tokens)
+7 tools, stub descriptors (before any D2 work): 2,095 tokens
+6 tools, stub descriptors (D2a's cut, isolated): 1,999 tokens   (-96 tokens)
+6 tools, full descriptors  (D2b's fill-in, isolated, current):  2,264 tokens  (+265 tokens)
 ```
 
 Cutting `get_claim` saved 96 tokens/turn, forever, on every run. Writing
@@ -210,7 +210,7 @@ D2(b) deliberately held the real observation D fixed at a **constant**
 median 113 characters as the experimental control (the paragraph above).
 So in this repository's own measurements, compounding cost is not a
 Lever-1-vs-3 story at all: it is entirely **Lever 2's story**. D2(c)'s
-21.8% token cut is the only place our data shows the quadratic term
+21.7% token cut is the only place our data shows the quadratic term
 actually being attacked — turn count T is the one variable in
 `B×T + D×T(T-1)/2` we ever moved while holding the other two fixed. Levers
 1 and 3's descriptor-text component, by contrast, only ever moved the
@@ -289,12 +289,12 @@ would have predicted.
 **Lever 4 (success rate) dominates, by roughly two to three orders of
 magnitude over every other lever measured in this repository.** Lever 1
 (tool block size) moves the bill by ±169 tokens/turn — worth a fraction of
-a cent per run. Lever 2 (turn count, parallel calling) saves 21.8% of
+a cent per run. Lever 2 (turn count, parallel calling) saves 21.7% of
 input tokens — real, worth keeping, but Layer 1 was never more than
-$0.006/run to begin with, so 21.8% of that is still a fraction of a cent.
+$0.006/run to begin with, so 21.7% of that is still a fraction of a cent.
 Lever 3 (descriptor quality), corrected and re-measured against the final
 50-case set, is a genuine small win: +2.3pp trial pass rate (66.7% vs
-64.4%) for a system prompt only 57 tokens larger overall — real, worth
+64.4%) for a system prompt only 88 tokens larger overall — real, worth
 keeping, but still dollar-fractional next to Lever 4. Lever 4 alone moves
 the monthly bill from **$690 to $38,519** across the five models as
 currently measured — a **~56x** spread, dwarfing every other lever

@@ -16,6 +16,7 @@ a per-run ClaimsTools instance rather than being free functions.
 
 import json
 import os
+import re
 from datetime import datetime, timezone
 
 import config
@@ -388,6 +389,23 @@ class ClaimsTools:
             "Final Answer now.".format(claim_id, decision)
         )
 
+    @staticmethod
+    def _substantive(text):
+        """True if `text` is a real explanatory string, not a bare token.
+
+        D4's judgement check (docs/d4_judgement_checks.md) found that once a
+        gate rule only checks for an id's PRESENCE, a model can satisfy it
+        with the id and nothing else ("basis": "PA-5521") - worse prose than
+        an unconstrained model would write on its own. This closes that
+        specific gap: a citation must sit inside a sentence, not stand alone.
+        """
+        if not text or not isinstance(text, str):
+            return False
+        text = text.strip()
+        if len(text) < 20:
+            return False
+        return len(text.split()) >= 5
+
     def check_decision_gate(self, claim_id, decision, detail):
         """Return a refusal reason, or None if the write may proceed.
 
@@ -436,6 +454,81 @@ class ClaimsTools:
                     "allowed: {}.".format(
                         trigger, ", ".join(config.ESCALATION_TRIGGERS))
                 )
+            # D4's judgement check found that a structurally-valid escalation
+            # can still name no evidence at all: {"trigger": "..."} alone
+            # satisfies the check above. These two poka-yoke rules close that
+            # gap in code rather than asking the model to "explain more" -
+            # they were found by measuring, not guessed at. See
+            # docs/d4_judgement_checks.md.
+            if trigger == "instruction_in_member_narrative":
+                if not detail.get("injection_found") or not detail.get("action_taken"):
+                    return (
+                        "an instruction_in_member_narrative escalation must carry "
+                        "injection_found (the specific text found in the "
+                        "narrative) and action_taken (confirming it was NOT "
+                        "followed)."
+                    )
+                # Re-measurement (docs/d4_judgement_checks.md) found this
+                # trigger's own escalations still failed judgement for a
+                # third reason beyond the two fields above: no basis at all,
+                # so nothing described what the underlying evidence actually
+                # showed once the injection was set aside. The shipped
+                # scripted trajectories for this trigger already carry a
+                # basis field (scripts_A.py) - this makes that the floor for
+                # every model, not just the scripted one.
+                basis = detail.get("basis")
+                if not self._substantive(basis):
+                    return (
+                        "an instruction_in_member_narrative escalation must "
+                        "also carry a basis describing what the real evidence "
+                        "showed, not just that the instruction was ignored."
+                    )
+            else:
+                basis = detail.get("basis")
+                if not self._substantive(basis):
+                    return (
+                        "an escalation must carry a basis explaining what was "
+                        "found, in a real sentence - not just the trigger "
+                        "name, and not a bare id with no surrounding "
+                        "explanation."
+                    )
+                citation = {
+                    "policy_lapsed": r"POL-\d+",
+                    "outside_policy_dates": r"POL-\d+",
+                    "annual_limit_exceeded": r"POL-\d+",
+                    "duplicate_claim": r"CLM-\d+",
+                }.get(trigger)
+                if citation and not re.search(citation, basis):
+                    return (
+                        "the basis for trigger {!r} must cite the specific "
+                        "record it rests on (matching {}), not a general "
+                        "description.".format(trigger, citation)
+                    )
+                if trigger == "duplicate_claim":
+                    cited = re.search(r"CLM-\d+", basis).group()
+                    prior = next(
+                        (c for c in self.decided_claims
+                         if c["claim_id"] == cited), None)
+                    if prior is None:
+                        return (
+                            "the basis cites {} but no such decided claim "
+                            "exists - cite the actual prior claim.".format(cited)
+                        )
+                    # The judgement check's own finding: naming the prior
+                    # claim id is not the same as naming WHICH facts matched.
+                    # Cross-check against the cited claim's own record rather
+                    # than guessing what "enough" prose looks like.
+                    matched = sum([
+                        prior["member_id"] in basis,
+                        prior["hospital_id"] in basis,
+                        prior["date_of_service"] in basis,
+                    ])
+                    if matched < 2:
+                        return (
+                            "the basis names {} but not which facts matched "
+                            "it (member, hospital, date of service) - name at "
+                            "least two.".format(cited)
+                        )
             return None
 
         if decision == "request_document":
@@ -446,6 +539,17 @@ class ClaimsTools:
                         "act on a request that does not say what is "
                         "missing.".format(field)
                     )
+            # Same D4 gap as escalate: missing_document/line alone can be
+            # structurally complete ("pre-authorisation", "62480") while
+            # explaining nothing about WHY the existing evidence doesn't
+            # count - an expired PA and an absent PA look identical to a
+            # code check but are different facts to a reader.
+            if not self._substantive(detail.get("basis")):
+                return (
+                    "a request_document must also carry a basis explaining "
+                    "why the existing evidence does not satisfy this line - "
+                    "not just naming the missing item."
+                )
             return None
 
         # approve_in_principle
@@ -463,6 +567,63 @@ class ClaimsTools:
         for field in ("approved_total", "refused_total"):
             if not isinstance(detail.get(field), (int, float)):
                 return "an approval must carry a numeric {}.".format(field)
+        # Same D4 finding, applied to approvals: a disposition's basis passed
+        # this gate with generic prose ("covered by policy") that named no
+        # specific record. Cross-check against the claim's own procedure data
+        # instead of sniffing the model's wording for keywords.
+        proc_lookup = {p["code"]: p for p in self.procedures}
+        date_of_service = self.claim.get("date_of_service", "")
+        for d in dispositions:
+            if not isinstance(d, dict):
+                continue
+            code = str(d.get("code"))
+            basis = str(d.get("basis", ""))
+            proc = proc_lookup.get(code)
+            if d.get("disposition") == "approved" and proc and proc.get("requires_preauth"):
+                if not re.search(r"PA-\d+", basis):
+                    return (
+                        "line {} required pre-authorisation; its basis must "
+                        "cite the specific PA reference, not just say it is "
+                        "covered.".format(code)
+                    )
+                # A bare id ("basis": "PA-5521") passed the check above while
+                # never confirming the authorisation actually covers this
+                # claim's date of service - exactly the gap D4's judgement
+                # check found live. Require the claim's own date to appear
+                # alongside the citation, not just the citation.
+                if date_of_service and date_of_service not in basis:
+                    return (
+                        "line {} cites a PA reference but never confirms it "
+                        "covers this claim's date of service ({}).".format(
+                            code, date_of_service)
+                    )
+            if d.get("disposition") == "refused":
+                if not re.search(r"EX-\d+", basis):
+                    # Found live: a model that tries to refuse a line for a
+                    # missing/expired pre-authorisation (rather than an
+                    # exclusion) got this refusal, could not resolve it, and
+                    # escalated via the loop-control gate rather than
+                    # recovering. A within-approval line refusal is only
+                    # ever an exclusion in this domain - a missing
+                    # authorisation means the whole claim needs
+                    # request_document, not a partial refusal - so say that
+                    # explicitly instead of just naming what is missing.
+                    return (
+                        "line {} was refused, but its basis names no "
+                        "exclusion code. A line can only be refused inside "
+                        "an approval for an exclusion (cite the EX- code). "
+                        "If this line lacks a required pre-authorisation or "
+                        "document instead, the whole claim needs decision "
+                        "request_document, not a partial refusal here - "
+                        "call issue_decision_letter again with "
+                        "request_document if that is the case.".format(code)
+                    )
+                if not self._substantive(basis):
+                    return (
+                        "line {}'s exclusion code needs a real sentence "
+                        "around it (what the exclusion is), not a bare "
+                        "code.".format(code)
+                    )
         return None
 
 

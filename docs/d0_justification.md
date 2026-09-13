@@ -142,7 +142,7 @@ weak spots:
 - **Annual-limit arithmetic**, by contrast, is a step D2(c) already
   applied move (b) to: batching `check_hospital` with every independent
   `check_coverage` call is exactly "fold it into a parallel turn," and it
-  is the reason turn count fell 21.8% (`d2c_measurement.md`). It did not
+  is the reason turn count fell 21.7% (`d2c_measurement.md`). It did not
   fix the arithmetic itself — the limit comparison still happens inside
   the model's own reasoning between observations, not in code — so this
   cluster's residual failures show move (b)'s ceiling: cutting turns
@@ -152,7 +152,7 @@ The honest read: **two of our three weak spots only have move (a)
 available**, which is the harder lever Class 4 warns about — D2(b)'s
 corrected v1-vs-v2 result (+2.3pp from a better `check_coverage`
 descriptor) is a small, real proof that move (a) works here, but it also
-shows how much smaller its yield is than move (b)'s D2(c) result (21.8%
+shows how much smaller its yield is than move (b)'s D2(c) result (21.7%
 token cut, effectively free). Problem A's bigger failures are step-quality
 problems precisely because they are checks that cannot be designed away.
 

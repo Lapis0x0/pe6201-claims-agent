@@ -35,7 +35,7 @@ layer and the evaluation set have to cover by one tool that was never
 exercised — a failure mode we would otherwise be carrying untested.
 **Feeds D6**: removing `get_claim`'s descriptor shrinks the prompt prefix `B`
 used in `D6`'s lever-1 (tool block size) before/after comparison — measured
-exactly (not estimated) at **-96 tokens/turn** in isolation (1,996 → 1,900
+exactly (not estimated) at **-96 tokens/turn** in isolation (2,095 → 1,999
 tokens for a 7-tool vs 6-tool prompt, both with stub descriptors, holding
 everything else constant). This isolated delta is stable even as the
 absolute numbers move with later prompt edits — see `d6_notes.md`'s "Lever 1,

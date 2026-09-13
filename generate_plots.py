@@ -18,6 +18,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+import config
 from d6_cost_model import (
     RUNS, measure_run, layer2_fallback, cost_per_successful_task,
     monthly_cost, break_even_success_rate, VOLUME_PER_MONTH,
@@ -33,7 +34,10 @@ LIGHT_BLUE = "#A8C7DD"
 CORAL = "#E07A5F"
 NAVY = "#273043"
 GREY = "#8B9098"
-B = 2198
+# Measured from the live system prompt, not hardcoded - a hardcoded B here
+# went stale the moment TOOL_SPECS's prompt_guidance changed (D4's gate-fix
+# work grew it), which silently disagreed with every other B in the report.
+B = round(len(config.build_system_prompt()) / 4)
 D = 176
 
 
@@ -128,8 +132,8 @@ def turn_token_growth_plot():
     ax.grid(axis="y", alpha=0.25)
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(0, 0.84))
     ax.text(0.01, -0.20,
-            "Formula: B x T + D x T(T-1)/2. Measured B = 2,198; "
-            "representative D = 176 tokens/turn (median, parallel trajectories).",
+            "Formula: B x T + D x T(T-1)/2. Measured B = {:,}; "
+            "representative D = {} tokens/turn (median, parallel trajectories).".format(B, D),
             transform=ax.transAxes, fontsize=9, color="#444444")
     fig.tight_layout()
     save(fig, "fig_d0_turn_token_growth.png")
@@ -221,47 +225,73 @@ def reliability_curve_plot():
 
 
 def failure_reproduction_plot():
-    """D7 before/after evidence in the report's shared visual language."""
+    """D7 before/after evidence in the report's shared visual language.
+
+    Computed live from failure1_loop.py/failure2_interface.py rather than
+    hardcoded - a hardcoded copy of these numbers went stale the moment
+    config.TOOL_SPECS changed (D4's gate-fix work grew the system prompt),
+    silently disagreeing with what the scripts themselves now report.
+    """
+    import failure1_loop
+    import failure2_interface
+
+    CHEAP_IN, CHEAP_OUT = 0.10, 0.40  # section 7, USD per million tokens
+
+    def cost(inp, out):
+        return inp / 1e6 * CHEAP_IN + out / 1e6 * CHEAP_OUT
+
+    f1_broken = failure1_loop.run_once(max_repeats=999)
+    f1_fixed = failure1_loop.run_once(max_repeats=config.MAX_REPEATS)
+    f2_broken = failure2_interface.run_broken()
+    f2_fixed = failure2_interface.run_fixed()
+
     fig, axes = plt.subplots(1, 2, figsize=(12.5, 5.6))
 
     # Failure 1 is detected by excess work even though the outcome still passes.
     states1 = ["Working", "Broken", "Restored"]
-    turns1 = [5, 15, 5]
+    turns1 = [f1_fixed.steps, f1_broken.steps, f1_fixed.steps]
+    tokens1 = [f1_fixed.input_tokens_est, f1_broken.input_tokens_est,
+               f1_fixed.input_tokens_est]
+    costs1 = [cost(f1_fixed.input_tokens_est, f1_fixed.output_tokens_est),
+              cost(f1_broken.input_tokens_est, f1_broken.output_tokens_est),
+              cost(f1_fixed.input_tokens_est, f1_fixed.output_tokens_est)]
     colors1 = [BLUE, CORAL, NAVY]
     axes[0].bar(states1, turns1, color=colors1, width=0.58)
-    axes[0].axhline(15, color=CORAL, linestyle="--", linewidth=1,
-                    alpha=0.75, label="15-turn backstop")
+    axes[0].axhline(config.MAX_STEPS, color=CORAL, linestyle="--", linewidth=1,
+                    alpha=0.75, label="{}-turn backstop".format(config.MAX_STEPS))
     axes[0].set_title("Failure 1: repeated action reaches the turn cap",
                       fontsize=11)
     axes[0].set_ylabel("Agent turns per run")
-    axes[0].set_ylim(0, 17.5)
+    axes[0].set_ylim(0, config.MAX_STEPS * 1.17)
     axes[0].grid(axis="y", alpha=0.2)
     axes[0].legend(frameon=False, loc="upper right")
-    for i, (turns, tokens, cost) in enumerate(zip(
-            turns1, [12368, 43624, 12368], [0.00133, 0.00464, 0.00133])):
+    for i, (turns, tokens, c) in enumerate(zip(turns1, tokens1, costs1)):
         axes[0].text(i, turns + 0.35,
-                     f"{turns} turns\n{tokens:,} input tok\nUSD {cost:.5f}",
+                     f"{turns} turns\n{tokens:,} input tok\nUSD {c:.5f}",
                      ha="center", va="bottom", fontsize=8.5,
                      fontweight="bold" if i == 1 else "normal",
                      color=CORAL if i == 1 else NAVY)
 
     # Failure 2 looks cheaper, so correctness—not efficiency—exposes it.
-    # Numbers must match docs/d7_failures.md and Table 5b of the report
-    # exactly - this chart, not the prose, is what a reader compares first.
     states2 = ["Working", "Broken", "Restored"]
-    tokens2 = [13093, 9697, 13093]
+    tokens2 = [f2_fixed.input_tokens_est, f2_broken.input_tokens_est,
+               f2_fixed.input_tokens_est]
+    calls2 = [f2_fixed.tool_calls, f2_broken.tool_calls, f2_fixed.tool_calls]
+    costs2 = [cost(f2_fixed.input_tokens_est, f2_fixed.output_tokens_est),
+              cost(f2_broken.input_tokens_est, f2_broken.output_tokens_est),
+              cost(f2_fixed.input_tokens_est, f2_fixed.output_tokens_est)]
+    outcomes2 = ["approve", "WRONG escalate", "approve"]
     colors2 = [BLUE, CORAL, NAVY]
     axes[1].bar(states2, tokens2, color=colors2, width=0.58)
     axes[1].set_title("Failure 2: the wrong outcome appears cheaper",
                       fontsize=11)
     axes[1].set_ylabel("Input tokens per run")
-    axes[1].set_ylim(0, 15750)
+    axes[1].set_ylim(0, max(tokens2) * 1.2)
     axes[1].grid(axis="y", alpha=0.2)
-    for i, (tokens, calls, cost, outcome) in enumerate(zip(
-            tokens2, [8, 3, 8], [0.00161, 0.00108, 0.00161],
-            ["approve", "WRONG escalate", "approve"])):
-        axes[1].text(i, tokens + 320,
-                     f"{tokens:,} input tok\n{calls} calls · USD {cost:.6f}\n{outcome}",
+    for i, (tokens, calls, c, outcome) in enumerate(
+            zip(tokens2, calls2, costs2, outcomes2)):
+        axes[1].text(i, tokens + max(tokens2) * 0.02,
+                     f"{tokens:,} input tok\n{calls} calls · USD {c:.6f}\n{outcome}",
                      ha="center", va="bottom", fontsize=8.5,
                      fontweight="bold" if i == 1 else "normal",
                      color=CORAL if i == 1 else NAVY)

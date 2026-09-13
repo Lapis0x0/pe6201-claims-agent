@@ -31,34 +31,39 @@ backend at every turn (the exact quantity the formula approximates). This is
 more accurate than plugging in an assumed `D`, and it still costs nothing —
 no network, no key.
 
-For a visual sensitivity view, `generate_plots.py` uses the measured
-current prefix `B = 2,165` tokens and the median inferred growth from the
-parallel trajectories, `D = 176` tokens/turn. The resulting
-`../figs/fig_d0_turn_token_growth.png` separates the repeated-prefix and
-accumulated-history terms. Predicted input grows from 22,248 tokens at 8
-turns to 55,760 at 16 turns: **2.51x**, not 2x. The exact replay remains the
-D2(c) comparison; this curve isolates the turn trend so the nonlinear effect
-is visible.
+For a visual sensitivity view, `generate_plots.py` computes `B` from
+`config.build_system_prompt()` directly (not hardcoded, so it can't go
+stale the way a copied-in number can) — currently **2,264** tokens — and
+uses the median inferred growth from the parallel trajectories, `D = 176`
+tokens/turn. The resulting `../figs/fig_d0_turn_token_growth.png` separates
+the repeated-prefix and accumulated-history terms. Predicted input grows
+from 23,040 tokens at 8 turns to 57,344 at 16 turns: **2.49x**, not 2x. The
+exact replay remains the D2(c) comparison; this curve isolates the turn
+trend so the nonlinear effect is visible.
 
 ## Results, full 50-case set, 1 trial each
 
 ```
 $ python3 measure_parallel.py
-system prompt B: 8661 chars (~2165 tokens)
+system prompt B: 9057 chars (~2264 tokens)
 
-TOTAL across 50 cases: parallel 648,376 tokens, sequential 828,709 tokens,
-saved 180,333 tokens (21.8%)
+TOTAL across 50 cases: parallel 673,615 tokens, sequential 860,782 tokens,
+saved 187,167 tokens (21.7%)
 ```
 
-(`B` has grown twice since this file was first written — once for D5(b)'s
-worked-example fix, once for the narrative/annual-limit prompt tightening —
+(`B` has grown three times since this file was first written — for D5(b)'s
+worked-example fix, the narrative/annual-limit prompt tightening, and most
+recently D4's judgement-check gate fix (`issue_decision_letter`'s
+`prompt_guidance` now spells out the citation rules the gate enforces) —
 and the absolute numbers below are re-measured each time from a live run of
-`measure_parallel.py`, not hand-adjusted. The set itself also grew, from 40
-to 50 cases, once D4 added ten more cases to reach the brief's ceiling — the
-saving is stable at ~21% across both changes because it's a ratio: the
-prefix grows equally in both arms, and the ten new cases are ordinary
-approvals whose own parallel/sequential split looks like the rest of the
-set. `results/d2c_scripted_measured_current.json` always holds the current
+`measure_parallel.py`, not hand-adjusted. `generate_plots.py`'s own B
+constant is computed from `config.build_system_prompt()` for the same
+reason, not hardcoded. The set itself also grew, from 40 to 50 cases, once
+D4 added ten more cases to reach the brief's ceiling — the saving is stable
+at ~21-22% across all these changes because it's a ratio: the prefix grows
+equally in both arms, and the extra cases are ordinary approvals whose own
+parallel/sequential split looks like the rest of the set.
+`results/d2c_scripted_measured_current.json` always holds the current
 numbers.)
 
 **The consolidated comparison, aggregated over all 50 cases:**
@@ -67,10 +72,10 @@ numbers.)
 |---|---|---|---|
 | Turns (sum, 50 cases) | 324 | 255 | 69 (21.3%) |
 | Tool calls (sum, 50 cases) | 274 | 274 | 0 — same trajectories, only batching differs |
-| Input tokens | 828,709 | 648,376 | 180,333 (21.8%) |
+| Input tokens | 860,782 | 673,615 | 187,167 (21.7%) |
 | Output tokens | 25,179 | 25,025 | 154 (0.6%) |
-| **Total tokens** | **853,888** | **673,401** | **180,487 (21.1%)** |
-| Cost, cheap tier | \$0.0929 | \$0.0748 | \$0.0181 |
+| **Total tokens** | **885,961** | **698,640** | **187,321 (21.1%)** |
+| Cost, cheap tier | \$0.0961 | \$0.0774 | \$0.0188 |
 | Cost, mid tier | \$0.9546 | \$0.7735 | \$0.1811 |
 | Pass rate | 100% (50/50) | 100% (50/50) | unchanged |
 | Latency | N/A — scripted, no real network call | N/A | live latency needs D5(b) |
@@ -88,9 +93,10 @@ claim, where five independent `check_coverage` calls collapse into one turn
 instead of five). The pattern is exactly what the dependency rule predicts:
 **savings scale with how many independent calls a claim's line count
 produces**, not with turn count alone. `CLM-8842` (the brief's own worked
-example): 24,084 -> 16,067 input tokens, 33.3% saved, 9 -> 6 turns —
-unchanged by the set growing to 50, because `B` is a function of the tool
-descriptors, not the case count.
+example): 24,974 -> 16,661 input tokens, 33.3% saved, 9 -> 6 turns —
+the turn count and percentage are unchanged by the set growing to 50 or by
+`B` growing since, because both are ratios/counts that don't depend on the
+prefix's absolute size; only the absolute token totals shift when `B` does.
 
 Correctness: **100% pass rate both ways** (50/50 parallel, 50/50
 sequential) — same trajectories, same decisions, only the batching differs.
@@ -99,9 +105,9 @@ sequential) — same trajectories, same decisions, only the batching differs.
 
 The brief's Appendix A illustration for `CLM-8842` used illustrative
 constants (`B=1,200`, `D=400`) and got 20,800 -> 9,600 tokens (54% saved).
-Our measured numbers for the same case are 24,084 -> 16,067 (33.3% saved) —
+Our measured numbers for the same case are 24,974 -> 16,661 (33.3% saved) —
 directionally identical (parallel wins, by a lot), but a different
-magnitude, for a fully explainable reason: our real system prompt is 2,165
+magnitude, for a fully explainable reason: our real system prompt is 2,264
 tokens (six full descriptor contracts with size bounds, poka-yoke text, a
 worked example for the gated write, and explicit narrative/arithmetic
 guidance), well over the brief's illustrative 1,200, while our real

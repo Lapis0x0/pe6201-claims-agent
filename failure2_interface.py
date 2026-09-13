@@ -78,9 +78,9 @@ def run_broken():
                  "trigger": "duplicate_claim",
                  "escalate_to": "human claims assessor",
                  "prior_claim": "CLM-8726",
-                 "basis": "check_duplicate returned MATCH for member "
-                         "M-5502, hospital H-114, date of service "
-                         "2026-09-15.",
+                 "basis": "check_duplicate returned MATCH for claim "
+                         "CLM-8726: member M-5502, hospital H-114, date "
+                         "of service 2026-09-15.",
              })],
         Final("the claims history shows a match on member, hospital and "
              "date of service; escalating rather than pricing four new "

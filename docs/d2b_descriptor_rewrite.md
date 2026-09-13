@@ -146,7 +146,7 @@ actually moves this measurement. `descriptors_v1.py` and
 | Negative trials | 31/60 (51.7%) | 32/60 (53.3%) |
 | Avg input tokens/run | 18,092 | 18,721 |
 | Avg output tokens/run | 544 | 546 |
-| System prompt size | 2,108 tokens | 2,165 tokens |
+| System prompt size (current repo state) | 2,176 tokens | 2,264 tokens |
 | Total cost (90 trials) | $0.2736 | $0.2822 |
 
 (`results/d2b_live_v1_gpt4o_mini.json`, `results/d2b_live_v2_gpt4o_mini.json`)
@@ -162,8 +162,10 @@ case") without ever giving a shape, a size bound, or a concrete field
 list.
 
 **The result**: v2 wins by +2.3 points (66.7% vs 64.4%), and it does so
-while its *own* system prompt is only 57 tokens larger overall (2,165 vs
-2,108) — smaller than the earlier, uncorrected v1's prompt gap, because
+while its *own* system prompt is only 88 tokens larger overall (2,264 vs
+2,176, current repo state — this delta is stable even as the absolute
+numbers move with later prompt edits, since both arms grow by the same
+amount) — smaller than the earlier, uncorrected v1's prompt gap, because
 corrected v1's blank `what` field saves more than its now-verbose
 `returns` field costs. The per-run token cost is close either way
 (18,721 vs 18,092, +3.5%) and the accuracy gain is real, not simply
