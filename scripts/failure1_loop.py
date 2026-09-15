@@ -12,9 +12,13 @@ proceeding to a decision - "it repeats an action it already took... a loop
 has no memory of its own actions unless you give it one" (the brief's own
 framing). What changes is only whether the code layer is watching.
 
-Usage: python3 failure1_loop.py
+Usage: python3 scripts/failure1_loop.py
 """
 
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 import tools as tools_module
 from agent import ClaimsAgent

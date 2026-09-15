@@ -1,6 +1,6 @@
 # D3(b) — the guardrail checklist
 
-Ten cases, run by `guardrail_checklist.py` on the scripted backend, no key,
+Ten cases, run by `scripts/guardrail_checklist.py` on the scripted backend, no key,
 no network. Each scripts an *attempt* at the wrong behaviour and asserts the
 code layer catches it — this is not the same test as D4's evaluation set.
 An evaluation case asks "did it get the job right?"; a guardrail case asks
@@ -13,7 +13,7 @@ deliberately do not share attack text.
 ## Results
 
 ```
-$ python3 guardrail_checklist.py
+$ python3 scripts/guardrail_checklist.py
 12/12 guardrail cases behaved as required
 ```
 
@@ -58,6 +58,6 @@ driver puts it on.
 ## Verification
 
 ```
-$ python3 guardrail_checklist.py --json d3b_results.json
+$ python3 scripts/guardrail_checklist.py --json d3b_results.json
 $ python3 harness.py                     # unaffected: 50/50
 ```

@@ -15,9 +15,13 @@ M-5502) then collides with CLM-8726 in decided_claims - a real, different,
 1-line prior claim on the same day, same member, same hospital - and the
 weakened tool reports a false MATCH.
 
-Usage: python3 failure2_interface.py
+Usage: python3 scripts/failure2_interface.py
 """
 
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import tools as tools_module
 import scripts_A
 from agent import ClaimsAgent

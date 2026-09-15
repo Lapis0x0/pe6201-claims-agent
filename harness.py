@@ -31,6 +31,7 @@ import os
 import sys
 from collections import Counter
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts"))
 import config
 import scripts_A
 import tools as tools_module
@@ -308,6 +309,11 @@ def print_judgement_sheet(rows):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("case_id", nargs="?", default=None,
+                        help="run only this one case, with every turn shown "
+                             "(same as --case CLM-8894 --verbose). Positional, "
+                             "so `python3 run_eval.py CLM-8842` works the way "
+                             "the scaffold's `run_eval.py REF-5602` does.")
     parser.add_argument("--live", action="store_true",
                         default=(config.BACKEND == "live"),
                         help="use a real model instead of the scripted "
@@ -325,6 +331,13 @@ def main():
                              "quick/cheap smoke test.")
     parser.add_argument("--case", action="append", default=None,
                         help="run only this case id (repeatable)")
+    parser.add_argument("--all", action="store_true",
+                        help="accepted for compatibility with the scaffold's "
+                             "run_eval.py --all, which exists to surface "
+                             "unscripted cases; every case in this "
+                             "evaluation set already has both a script and "
+                             "an answer-key entry, so this flag changes "
+                             "nothing here.")
     parser.add_argument("--sequential", action="store_true",
                         help="scripted only: one action per turn instead of "
                              "batched parallel calls (D2c control arm)")
@@ -349,7 +362,40 @@ def main():
                              "descriptor fixed at v2. Only affects --live "
                              "runs; the scripted backend's expected "
                              "trajectories assume v1.")
+    parser.add_argument("--prompt", action="store_true",
+                        help="print exactly what the model is told (the "
+                             "rendered system prompt) plus its character/"
+                             "token cost, then exit. Combine with "
+                             "--descriptor-version v1 to see D2(b)'s worse "
+                             "arm. Nothing is run.")
     args = parser.parse_args()
+
+    if args.case_id:
+        args.case = (args.case or []) + [args.case_id]
+        args.verbose = True
+
+    if args.prompt:
+        prompt_overrides = None
+        if args.descriptor_version == "v1":
+            import descriptors_v1
+            prompt_overrides = descriptors_v1.OVERRIDES
+        text = config.build_system_prompt(prompt_overrides)
+        print("=" * 68)
+        print("  SYSTEM PROMPT (descriptors {}) - what the model is told "
+              "before turn 1".format(args.descriptor_version))
+        print("=" * 68)
+        print(text)
+        print("=" * 68)
+        print("  characters   {}".format(len(text)))
+        print("  ~tokens      {}   (rough: chars/4, same estimate D6 uses)"
+              .format(len(text) // 4))
+        print("  tools listed {}".format(len(config.TOOL_SPECS)))
+        print("=" * 68)
+        print("  THIS COST IS PAID ON EVERY TURN - the B in input ~ B*T + "
+              "D*T(T-1)/2 (see docs/d2c_measurement.md). On the scripted "
+              "backend this text is never sent to anything; D2(b)'s v1-vs-v2 "
+              "comparison needs --live.")
+        return 0
 
     expected_by_id = load_expected()
     claims = tools_module.load_table("claims")
@@ -398,9 +444,12 @@ def main():
                 scripts_A.script_for(claim["claim_id"],
                                      parallel=not args.sequential))
 
-    # The gated action appends. Start each evaluation from an empty file so the
-    # decision log is the log of this evaluation and not of every past one.
-    open(config.DECISIONS_PATH, "w", encoding="utf-8").close()
+    # The gated action appends. logs/decisions.jsonl is an append-only,
+    # cross-run history now - this run's records land on top of every past
+    # run's, never replacing them. Just ensure the file (and logs/) exist.
+    os.makedirs(config.LOGS_DIR, exist_ok=True)
+    if not os.path.exists(config.DECISIONS_PATH):
+        open(config.DECISIONS_PATH, "a", encoding="utf-8").close()
 
     rows = run_evaluation(backend_factory, cases, expected_by_id,
                           trials=args.trials, verbose=args.verbose,

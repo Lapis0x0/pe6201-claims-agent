@@ -25,13 +25,13 @@ shipped and added, follows):
 
 The brief's `input ~= B*T + D*T(T-1)/2` assumes a uniform per-turn addition
 `D`. We don't have to assume it — the scripted backend produces real text
-for every turn, so `measure_parallel.py` replays **all 50 cases, both ways**,
+for every turn, so `scripts/measure_parallel.py` replays **all 50 cases, both ways**,
 and sums the actual character length of the message list sent to the
 backend at every turn (the exact quantity the formula approximates). This is
 more accurate than plugging in an assumed `D`, and it still costs nothing —
 no network, no key.
 
-For a visual sensitivity view, `generate_plots.py` computes `B` from
+For a visual sensitivity view, `scripts/generate_plots.py` computes `B` from
 `config.build_system_prompt()` directly (not hardcoded, so it can't go
 stale the way a copied-in number can) — currently **2,264** tokens — and
 uses the median inferred growth from the parallel trajectories, `D = 176`
@@ -44,7 +44,7 @@ trend so the nonlinear effect is visible.
 ## Results, full 50-case set, 1 trial each
 
 ```
-$ python3 measure_parallel.py
+$ python3 scripts/measure_parallel.py
 system prompt B: 9057 chars (~2264 tokens)
 
 TOTAL across 50 cases: parallel 673,615 tokens, sequential 860,782 tokens,
@@ -56,7 +56,7 @@ worked-example fix, the narrative/annual-limit prompt tightening, and most
 recently D4's judgement-check gate fix (`issue_decision_letter`'s
 `prompt_guidance` now spells out the citation rules the gate enforces) —
 and the absolute numbers below are re-measured each time from a live run of
-`measure_parallel.py`, not hand-adjusted. `generate_plots.py`'s own B
+`scripts/measure_parallel.py`, not hand-adjusted. `scripts/generate_plots.py`'s own B
 constant is computed from `config.build_system_prompt()` for the same
 reason, not hardcoded. The set itself also grew, from 40 to 50 cases, once
 D4 added ten more cases to reach the brief's ceiling — the saving is stable
@@ -169,7 +169,7 @@ leaving the discrepancy for a marker to notice unexplained.
 ## Verification
 
 ```
-$ python3 measure_parallel.py --json results/d2c_scripted_measured_current.json
+$ python3 scripts/measure_parallel.py --json results/d2c_scripted_measured_current.json
 $ python3 harness.py --json results/harness_scripted_default.json      # 50/50
 $ python3 harness.py --sequential --json results/d2c_scripted_sequential.json  # 50/50
 ```

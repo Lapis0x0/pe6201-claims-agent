@@ -34,7 +34,7 @@ without touching the negative floor, which was already well clear of it.
 
 ## The 25 added cases, by what they test
 
-All 25 are built from `EXTRA_CLAIMS` alone in `make_fixtures_A.py` — no new
+All 25 are built from `EXTRA_CLAIMS` alone in `scripts/make_fixtures_A.py` — no new
 members, policies, hospitals, procedures, pre-authorisations or
 required-document rules were needed; every new case reuses the shipped
 supporting data, which kept the referential-integrity surface small.
@@ -190,7 +190,7 @@ uniform 150 — the same shape a live model would be billed for. All 90
 ## Verification
 
 ```
-$ python3 check_my_data.py
+$ python3 scripts/check_my_data.py
 Your data hangs together.
 
 $ python3 harness.py

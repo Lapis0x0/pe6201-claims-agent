@@ -5,7 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
+SCRIPTS = ROOT / "scripts"
 
 
 def run(*args):
@@ -42,15 +43,15 @@ def validate_evidence():
 
 
 def main():
-    run(sys.executable, "check_my_data.py")
+    run(sys.executable, str(SCRIPTS / "check_my_data.py"))
     run(sys.executable, "harness.py")
-    run(sys.executable, "guardrail_checklist.py")
-    run(sys.executable, "failure1_loop.py")
-    run(sys.executable, "failure2_interface.py")
-    run(sys.executable, "measure_parallel.py")
-    run(sys.executable, "measure_d2b.py")
-    run(sys.executable, "d6_cost_model.py")
-    run(sys.executable, "generate_plots.py")
+    run(sys.executable, str(SCRIPTS / "guardrail_checklist.py"))
+    run(sys.executable, str(SCRIPTS / "failure1_loop.py"))
+    run(sys.executable, str(SCRIPTS / "failure2_interface.py"))
+    run(sys.executable, str(SCRIPTS / "measure_parallel.py"))
+    run(sys.executable, str(SCRIPTS / "measure_d2b.py"))
+    run(sys.executable, str(SCRIPTS / "d6_cost_model.py"))
+    run(sys.executable, str(SCRIPTS / "generate_plots.py"))
     validate_evidence()
     print("\nALL ZERO-COST SUBMISSION CHECKS PASSED")
 

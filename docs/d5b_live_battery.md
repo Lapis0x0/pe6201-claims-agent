@@ -172,7 +172,7 @@ prior best result (`gemini` on the earlier battery, ~99.4%/6 turns).
 ## What this means for D6
 
 D6's break-even/Lever-4 comparison now has five real, current data
-points, and the benchmark model changed: `d6_cost_model.py`'s break-even
+points, and the benchmark model changed: `scripts/d6_cost_model.py`'s break-even
 target is selected dynamically (the cheapest total cost/task), not
 hand-named, specifically because this re-measurement moved it from
 `gemini-2.5-flash` to `deepseek-v4-flash`. See `d6_notes.md` for the

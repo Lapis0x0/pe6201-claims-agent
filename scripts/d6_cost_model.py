@@ -7,17 +7,19 @@ batteries (results/d5b_live_*.json) plus the D2(b) v1/v2 pair
 measurement (measure_parallel.py). Nothing here is hand-typed where a real
 number is obtainable from a committed results file.
 
-Run: python3 d6_cost_model.py
+Run: python3 scripts/d6_cost_model.py
 """
 
 import json
 import os
+import sys
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 from harness import PRICE_PER_MILLION
 from measure_parallel import measure_all
 
-RESULTS_DIR = os.path.join(os.path.dirname(__file__), "results")
+RESULTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results")
 
 # ---------------------------------------------------------------------------
 # Problem A's given inputs (Appendix A)

@@ -5,9 +5,9 @@ The separate completed-task diagnostic (`C_run / p`) is reported in
 section uses the Class 5 escalation formula required by the A2 FAQ; the two
 models are not combined.
 
-Uses the Class 5 three-layer model, computed in `d6_cost_model.py` directly
+Uses the Class 5 three-layer model, computed in `scripts/d6_cost_model.py` directly
 from this repository's committed result files (`results/d5b_live_*.json`,
-`results/d2b_live_*.json`, `measure_parallel.py`) — every number below is
+`results/d2b_live_*.json`, `scripts/measure_parallel.py`) — every number below is
 measured, not estimated, now that all five D5(b) models plus the D2(b)
 v1/v2 pair have real live data.
 
@@ -35,12 +35,12 @@ the D2(b) v1/v2 pair are re-run against the final 50-case D4 set (90
 trials each). Re-measurement moved more than numbers: `deepseek-v4-flash`
 overtook `gemini-2.5-flash` for first place (91.25% -> 98.9%, vs
 `gemini`'s 96.25% -> 93.3%), which is why the break-even section below
-now targets `deepseek`, not `gemini` — `d6_cost_model.py` picks the
+now targets `deepseek`, not `gemini` — `scripts/d6_cost_model.py` picks the
 cheapest-overall model dynamically rather than hand-naming one, precisely
 so this kind of ranking change does not go stale silently.
 
 `gpt-4o-mini`'s v1-vs-v2 re-run measures the deliberately-worse v1 control
-`descriptors_v1.py` ships against the brief's spec — see
+`scripts/descriptors_v1.py` ships against the brief's spec — see
 `d2b_descriptor_rewrite.md` for the full descriptor comparison. v2 wins by
 +2.3pp (66.7% vs 64.4%). The numbers below use v2, D6's baseline
 throughout.
@@ -159,7 +159,7 @@ model on top.
 ### Lever 1, split into its two real causes
 
 The net "+169 tokens/turn" hides two opposite effects, both measured
-exactly (`d6_cost_model.py`'s reconstruction):
+exactly (`scripts/d6_cost_model.py`'s reconstruction):
 
 ```
 7 tools, stub descriptors (before any D2 work): 2,095 tokens
@@ -179,7 +179,7 @@ paid on every call of every run forever.*
 
 ### Lever 3, measured against the final 50-case set
 
-`d2b_descriptor_rewrite.md` has the full account. `descriptors_v1.py`
+`d2b_descriptor_rewrite.md` has the full account. `scripts/descriptors_v1.py`
 ships the deliberately-worse descriptor the brief and its own docstring
 specify: `fails_when` and `irreversible` both blank, and a `returns`
 field that is vague *and* costly rather than merely short. v2 wins:
@@ -192,7 +192,7 @@ describes: a genuine, if modest, win for the six-field rewrite, not a wash
 and not a loss.
 
 The actual observation-return control is also measured, not assumed:
-`measure_d2b.py` calls `check_coverage` for all 50 valid fixture combinations.
+`scripts/measure_d2b.py` calls `check_coverage` for all 50 valid fixture combinations.
 Both arms return the same median 113 characters (~29 tokens), mean 115.32
 (~29.32), and maximum 145 (~37), because the tool implementation was held
 fixed. This cleanly separates Lever 3's two components: **observation D did
@@ -250,7 +250,7 @@ itself moved from $19,030 to $20,297 when `p` dropped from 68.75% to
 The brief's question, now answerable with real numbers instead of an
 illustrative table: **how accurate would each cheaper model need to
 become to match the cheapest-overall model's total cost/task**?
-`d6_cost_model.py` picks that benchmark dynamically (whichever model has
+`scripts/d6_cost_model.py` picks that benchmark dynamically (whichever model has
 the lowest L1+L2 total) rather than hand-naming one — on the current
 50-case measurement it is **`deepseek-v4-flash`, at $0.0857/task**,
 not `gemini` as the earlier (40-case) measurement had it. That
@@ -313,8 +313,8 @@ not have been visible without running the live battery for real.
 ## Verification
 
 ```
-$ python3 d6_cost_model.py
+$ python3 scripts/d6_cost_model.py
 ```
 Reproduces every number in this document directly from
 `results/d5b_live_*.json`, `results/d2b_live_*.json`, and
-`measure_parallel.py` — no hand-typed figures.
+`scripts/measure_parallel.py` — no hand-typed figures.

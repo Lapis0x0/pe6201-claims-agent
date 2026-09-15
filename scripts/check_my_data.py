@@ -40,7 +40,7 @@ import os
 import sys
 import hashlib
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Which field identifies a row, per table. A tuple means the id is composite.
 IDS = {

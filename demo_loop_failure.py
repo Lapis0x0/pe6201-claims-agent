@@ -9,6 +9,10 @@ imported.
 Usage: python3 demo_loop_failure.py
 """
 
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts"))
 import config
 import failure1_loop
 

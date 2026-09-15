@@ -125,7 +125,7 @@ some guards use and others skip.
 **What was deleted**: `check_duplicate`'s real, shipped match requires
 four facts — member, hospital, date of service, and line items
 (`_line_key(prior["lines"]) == wanted`). `BrokenDuplicateMatch` in
-`failure2_interface.py` subclasses `ClaimsTools` and overrides
+`scripts/failure2_interface.py` subclasses `ClaimsTools` and overrides
 `check_duplicate` to drop the fourth. This is not hypothetical: it is
 exactly the failure mode `scripts_A.py`'s own shipped note for `CLM-8960`
 already names — *"it is ALSO the case that forces the lines comparison:
@@ -200,8 +200,8 @@ well-formed-but-wrong data.
 ## Verification
 
 ```
-$ python3 failure1_loop.py       # turn distribution, Working/Broken/Restored, both caps compared
-$ python3 failure2_interface.py  # Working/Broken/Restored, tokens/cost/pass now included
+$ python3 scripts/failure1_loop.py       # turn distribution, Working/Broken/Restored, both caps compared
+$ python3 scripts/failure2_interface.py  # Working/Broken/Restored, tokens/cost/pass now included
 $ python3 harness.py             # unaffected: 50/50
-$ python3 guardrail_checklist.py # unaffected: 12/12
+$ python3 scripts/guardrail_checklist.py # unaffected: 12/12
 ```

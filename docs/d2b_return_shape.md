@@ -26,7 +26,7 @@ v2 form — see `tools.py`'s `check_coverage`.
 
 ## What's measured already (no live call needed)
 
-`python3 measure_return_shape.py` renders the descriptor once (proving it is
+`python3 scripts/measure_return_shape.py` renders the descriptor once (proving it is
 untouched) and diffs the actual return value over all 50 fixture-valid
 policy x procedure lookups:
 
@@ -75,6 +75,6 @@ python3 harness.py --live --model openai/gpt-4o-mini --descriptor-version v2 --r
 
 ### Guardrail-pass control
 
-`guardrail_checklist.py` never passes `return_shape_version` (it exercises
+`scripts/guardrail_checklist.py` never passes `return_shape_version` (it exercises
 gate logic, not `check_coverage`'s observation), so both arms inherit the
 default v1 shape and the existing 12/12 result is unaffected either way.

@@ -1,7 +1,7 @@
 __pycache__/
 *.pyc
 .DS_Store
-decisions.jsonl
+logs/decisions.jsonl
 .env
 .env.*
 venv/

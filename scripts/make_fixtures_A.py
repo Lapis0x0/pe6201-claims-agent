@@ -41,13 +41,13 @@ RULES IF YOU EXTEND IT
     * Do not hand-edit the JSON - that is where malformed data comes from.
     * Run check_my_data.py afterwards. It catches an id that resolves to nothing.
 
-    python3 make_fixtures_A.py            # writes ./data_A/*.json
+    python3 scripts/make_fixtures_A.py    # writes ../data_A/*.json (repo root)
 """
 
 import json
 import os
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(HERE, "data_A")
 
 # ─────────────────────────────────────────────────────────────────────────────

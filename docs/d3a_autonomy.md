@@ -60,7 +60,7 @@ CONFIRM mode -> see guardrail case G11: blocked on attempt 1 (no approval yet), 
 - `agent.py`: `_finalise`'s autonomy check is now
   `if self.tools_obj.autonomy != "suggest" and not self.tools_obj.letter_issued`
   — `suggest` mode is allowed to conclude without ever writing.
-- `guardrail_checklist.py`: new case **G11**
+- `scripts/guardrail_checklist.py`: new case **G11**
   (`confirm_mode_blocks_without_operator_approval`), bringing the checklist
   to 12/12 (above the 10-case floor; G12 — invalid arguments — was added
   separately, see `d3b_guardrail_checklist.md`).
@@ -69,5 +69,5 @@ CONFIRM mode -> see guardrail case G11: blocked on attempt 1 (no approval yet), 
 
 ```
 $ python3 harness.py               # unaffected: 50/50 (default operator_approved=True)
-$ python3 guardrail_checklist.py   # 12/12, including G11
+$ python3 scripts/guardrail_checklist.py   # 12/12, including G11
 ```

@@ -6,12 +6,15 @@ every turn, so this script replays every case both ways and sums the actual
 length of the message list sent to the backend at every turn - the exact
 quantity the formula approximates. No live call, no estimate.
 
-Usage: python3 measure_parallel.py [--json out.json]
+Usage: python3 scripts/measure_parallel.py [--json out.json]
 """
 
 import argparse
 import json
+import os
+import sys
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 import scripts_A
 import tools as tools_module

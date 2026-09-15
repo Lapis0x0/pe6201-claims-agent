@@ -25,7 +25,7 @@ is actually paid for on every turn.
 | fails_when *(contract only, not rendered into the prompt)* | (absent) | named: unknown `policy_id` or `procedure_code` |
 | poka-yoke *(contract only; enforced in code, not prompt text)* | none | none on this tool specifically — see the four moves on the other three tools, below |
 
-`descriptors_v1.py` holds the v1 spec as a literal `OVERRIDES` dict;
+`scripts/descriptors_v1.py` holds the v1 spec as a literal `OVERRIDES` dict;
 `config.render_tool_list(overrides=...)` and `config.build_system_prompt(overrides=...)`
 accept it, and `harness.py --descriptor-version v1` wires it through
 `ClaimsAgent(prompt_overrides=...)` without touching `config.TOOL_SPECS` itself.
@@ -90,7 +90,7 @@ The transparent token estimate is `ceil(characters / 4)`. This null control
 matters: v2's live accuracy change cannot be attributed to receiving shorter
 observations, because both versions received the same bounded return strings.
 It isolates the paid descriptor rewrite as the changed variable. Reproduce
-the result with `python3 measure_d2b.py`.
+the result with `python3 scripts/measure_d2b.py`.
 
 **Named plainly against the brief's own wording**: the brief asks for "a v1
 and a v2 of its descriptor *and its return shape*." This document isolates
@@ -111,7 +111,7 @@ The checklist scripts attempted violations of the same code-layer controls in
 both arms. Descriptor text cannot disable the step cap, tool-call budget,
 de-duplication or autonomy gate, so unchanged 12/12 performance is the
 expected control result, not evidence that the prompt itself provides those
-guardrails. Stated precisely: `measure_d2b.py` runs the scripted guardrail
+guardrails. Stated precisely: `scripts/measure_d2b.py` runs the scripted guardrail
 checklist **once** and reports that single result for both columns, rather
 than executing it twice under each descriptor version — a shared control,
 not two independent runs. This is logically sound only because the scripted
@@ -128,7 +128,7 @@ only `--descriptor-version` changes. Current 50-case set, current trial
 arithmetic (30 ordinary x1 + 20 negative x3 = 90 trials), same guardrail
 code. Most recent run 2026-09-09.
 
-**v1's design, stated plainly.** `descriptors_v1.py` ships the
+**v1's design, stated plainly.** `scripts/descriptors_v1.py` ships the
 deliberately-worse control the brief's D2(b) section asks for: `fails_when`
 and `irreversible` both blank, and a `returns` field that is vague *and*
 costly rather than merely short. `fails_when` and `irreversible` are
@@ -136,7 +136,7 @@ documented-contract-only fields that `render_tool_list()` never sends to
 the model regardless of their content (see the contract-vs-rendered note
 above), so blanking them changes nothing live — but the `returns` field
 **is** rendered, and making it genuinely verbose (not just vague) is what
-actually moves this measurement. `descriptors_v1.py` and
+actually moves this measurement. `scripts/descriptors_v1.py` and
 `results/d2b_live_v1_gpt4o_mini.json` reflect this v1.
 
 | Metric | Prompt v1 (vague, corrected) | Prompt v2 (rewritten descriptor, current) |

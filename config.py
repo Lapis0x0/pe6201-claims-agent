@@ -15,7 +15,12 @@ EXPECTED_OUTCOMES_PATH = os.path.join(REPO_ROOT, "expected_outcomes_A.json")
 
 # The gated action appends one structured record per decision to this file.
 # It is a local simulation: no letter is sent and no live system is touched.
-DECISIONS_PATH = os.path.join(REPO_ROOT, "decisions.jsonl")
+# Append-only: every run's decisions accumulate here (see agent.py/tools.py's
+# write path and harness.py/guardrail_checklist.py's run-start behaviour -
+# neither truncates it any more).
+LOGS_DIR = os.path.join(REPO_ROOT, "logs")
+DECISIONS_PATH = os.path.join(LOGS_DIR, "decisions.jsonl")
+DECISIONS_SNAPSHOT_PATH = os.path.join(LOGS_DIR, "decisions.json")
 
 # --- pricing ---------------------------------------------------------------
 

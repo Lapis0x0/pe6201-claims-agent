@@ -10,8 +10,11 @@ measure_d2b.py does for the descriptor arm.
 """
 
 import math
+import os
 import statistics
+import sys
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 from tools import ClaimsTools, load_table
 

@@ -380,6 +380,7 @@ class ClaimsTools:
             "turns": self.turn,
             "cost_usd": round(self.cost_so_far, 4),
         }
+        os.makedirs(os.path.dirname(self.decisions_path), exist_ok=True)
         with open(self.decisions_path, "a", encoding="utf-8") as fh:
             fh.write(json.dumps(record, ensure_ascii=False) + "\n")
         self.letter_issued = True

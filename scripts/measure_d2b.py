@@ -8,8 +8,11 @@ the descriptor, not to a silently changed tool implementation.
 """
 
 import math
+import os
 import statistics
+import sys
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 import descriptors_v1
 from guardrail_checklist import build_rows
