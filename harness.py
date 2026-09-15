@@ -206,35 +206,47 @@ def print_d4_summary(rows):
     for row in rows:
         by_case.setdefault(row["case_id"], []).append(row)
 
-    judgement_path = os.path.join(
-        os.path.dirname(__file__), "results", "judgement_checks.json"
-    )
-    judgement_by_case = {}
-    if os.path.exists(judgement_path):
-        with open(judgement_path, encoding="utf-8") as fh:
-            judgement_by_case = {
-                item["case_id"]: item["verdict"]
-                for item in json.load(fh)["results"]
-            }
+    # Judgement-check verdicts are never graded live by this script (see the
+    # module docstring) - these are read-only references to committed,
+    # dated evidence files so the table always reflects the most recent
+    # documented pass, not just the first one ever run.
+    def _load_verdicts(path, key=None):
+        full = os.path.join(os.path.dirname(__file__), "results", path)
+        if not os.path.exists(full):
+            return {}
+        with open(full, encoding="utf-8") as fh:
+            data = json.load(fh)
+        results = data[key]["results"] if key else data["results"]
+        return {item["case_id"]: item["verdict"] for item in results}
+
+    judgement_baseline = _load_verdicts("judgement_checks.json")
+    judgement_baseline.update(_load_verdicts("judgement_checks_gpt4o_mini.json"))
+    judgement_after = _load_verdicts(
+        "judgement_checks_after_fix_v2.json", "gemini_2.5_flash")
+    judgement_after.update(_load_verdicts(
+        "judgement_checks_after_fix_v2.json", "gpt4o_mini_v2"))
 
     print("\n=== D4 results table (one row per case, {} trials each on "
           "average) ===".format(round(len(rows) / len(by_case), 1)))
-    print("{:<10} {:<30} {:<21} {:<21} {:<28} {:<10} {:<10} {}".format(
+    print("(judge columns are committed evidence from docs/d4_judgement_checks.md, "
+          "not graded by this script - baseline 2/20, after fix 9/20)")
+    print("{:<10} {:<30} {:<21} {:<21} {:<28} {:<10} {:<9} {:<9} {}".format(
         "case", "family", "expected", "actual", "trigger", "code check",
-        "live judge", "code result"))
-    print("-" * 145)
+        "judge<", "judge>", "code result"))
+    print("-" * 155)
     case_passed = 0
     for case_id, case_rows in by_case.items():
         all_pass = all(r["passed"] for r in case_rows)
         case_passed += all_pass
         one = case_rows[0]
-        print("{:<10} {:<30} {:<21} {:<21} {:<28} {:<10} {:<10} {}".format(
+        print("{:<10} {:<30} {:<21} {:<21} {:<28} {:<10} {:<9} {:<9} {}".format(
             case_id, one["family"][:30], one["expected"], one["actual"],
             one["actual_trigger"] or "-",
             "PASS" if all_pass else "FAIL",
-            judgement_by_case.get(case_id, "not selected"),
+            judgement_baseline.get(case_id, "-"),
+            judgement_after.get(case_id, "-"),
             "PASS" if all_pass else "FAIL"))
-    print("-" * 145)
+    print("-" * 155)
     print("supplementary strict case-consistency rate: {}/{} ({:.1%}) - "
           "a negative case counts only if all three trials pass; this is "
           "not the FAQ-defined primary pass rate above".format(case_passed, len(by_case),
