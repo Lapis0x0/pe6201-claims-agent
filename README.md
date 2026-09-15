@@ -154,19 +154,37 @@ The default backend is scripted. No API key, no network, no cost.
 what you go looking for first; every flag below works with either.
 
 ```bash
-python3 harness.py                  # the whole evaluation set
-python3 harness.py --sequential     # same trajectories, one action per turn
-python3 harness.py CLM-8894         # one case, every turn shown (positional, same as --case ... --verbose)
+python3 harness.py                             # the whole evaluation set
+python3 run_eval.py                            # identical — run_eval.py is a one-line alias for harness.py
+
+python3 harness.py --sequential                # same trajectories, one action per turn
+python3 run_eval.py --sequential               # identical
+
+python3 harness.py CLM-8894                    # one case, every turn shown (positional)
+python3 run_eval.py CLM-8894                   # identical
 python3 harness.py --case CLM-8894 --verbose   # same thing, spelled out
+python3 run_eval.py --case CLM-8894 --verbose  # identical
+
 python3 harness.py --judgement-sheet
-python3 harness.py --prompt         # exactly what the model is told, plus its token cost
-python3 harness.py --all            # accepted, changes nothing — see note below
-python3 agent.py CLM-8842           # one claim, full trace
-python3 scripts/measure_d2b.py            # D2(b) descriptor zero-cost control measurements
-python3 scripts/measure_return_shape.py   # D2(b) return-shape zero-cost control measurements
-python3 scripts/verify_submission.py      # all zero-cost checks plus evidence validation
-python3 scripts/generate_plots.py         # reproduce all standalone figures
+python3 run_eval.py --judgement-sheet          # identical
+
+python3 harness.py --prompt                    # exactly what the model is told, plus its token cost
+python3 run_eval.py --prompt                   # identical
+
+python3 harness.py --all                       # accepted, changes nothing — see note below
+python3 run_eval.py --all                      # identical
+
+python3 agent.py CLM-8842                      # one claim, full trace
+python3 scripts/measure_d2b.py                 # D2(b) descriptor zero-cost control measurements
+python3 scripts/measure_return_shape.py        # D2(b) return-shape zero-cost control measurements
+python3 scripts/verify_submission.py           # all zero-cost checks plus evidence validation
+python3 scripts/generate_plots.py              # reproduce all standalone figures
 ```
+
+Every flag documented above and anywhere else in this README works identically
+whichever of the two you type — `run_eval.py` carries no logic of its own; it
+only imports harness.py's `main()` and calls it, so a flag added to one is a
+flag added to both.
 
 `--all` is accepted but has no effect: in the scaffold it surfaces cases with
 no script yet, but every one of this repository's 50 evaluation cases
@@ -239,6 +257,46 @@ trusted local records — nothing the agent decides is grounded in the
 member's own narrative. `issue_decision_letter` is the single irreversible
 action, and it sits behind both a code-level autonomy gate and the loop's
 own refusal to finish without it.
+
+Plain-text version first, since the Mermaid diagram below only renders on
+GitHub — this same repository also goes into the NTULearn submission
+folder as plain files, where nothing renders Mermaid:
+
+```text
+Claim input
+  |
+  v
+ClaimsAgent (agent.py) -- one ReAct loop
+  |
+  +-- backend: ScriptedBackend (default, no key, no cost)
+  |         or LiveBackend (OpenRouter, --live)
+  |
+  v
+Code-level guardrails (agent.py)
+  step cap (MAX_STEPS) . budget ceiling (MAX_TOOL_CALLS) . de-dup (MAX_REPEATS)
+  |
+  v
+ClaimsTools (tools.py) -- 5 read tools
+  lookup_member_policy . check_duplicate . check_hospital
+  check_coverage . get_preauthorisation
+  |
+  v
+data_A/ (trusted local records) --Observation--> back into the loop
+  |
+  (repeats until the model has enough evidence for one final decision)
+  |
+  v
+check_decision_gate (autonomy = confirm)
+  |
+  +-- refused  --> no write; loop continues or escalates
+  |
+  +-- approved --> issue_decision_letter (the ONE irreversible write)
+                      |
+                      v
+                logs/decisions.jsonl (append-only, every run)
+```
+
+Same diagram, rendered as a flowchart (GitHub only):
 
 ```mermaid
 flowchart TD
