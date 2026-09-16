@@ -197,6 +197,7 @@ To run a real model, install `openai` and pass a key:
 ```bash
 pip install -r requirements.txt
 python3 harness.py --live --model openai/gpt-4o-mini --api-key $OPENROUTER_API_KEY
+python3 run_eval.py --live --model openai/gpt-4o-mini --api-key $OPENROUTER_API_KEY   # identical
 ```
 
 Check the fixture data after any change to it:

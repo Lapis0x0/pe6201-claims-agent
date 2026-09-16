@@ -81,6 +81,37 @@ since a `>=`-based implementation would wrongly escalate it. The two
 together, not either alone, are the evidence that the limit check uses the
 correct operator.
 
+## A negative case that changed the code, not just tested it
+
+`CLM-8933` (`duplicate_claim`) is not a case written after `check_duplicate`
+was already correct. Its own `note` field says why it exists: *"Match on
+the facts or you will never catch it - and match on ALL of them: the
+history also holds three near-misses, and every shortcut flags one of
+those."* That sentence only makes sense if a shorter match was tried first
+and shown to misfire — a match on fewer than all four facts (member,
+hospital, date of service, line items) either misses `CLM-8933`'s real
+duplicate or wrongly fires on one of the near-misses sitting next to it in
+`decided_claims`.
+
+`CLM-8960` is the other half of the same finding: an *ordinary* case
+(`approve_in_principle`, not negative) that exists purely to prove the
+shortcut wrong in the other direction. Its `note` is explicit: *"an agent
+matching duplicates on member + hospital + date alone will wrongly escalate
+this one."* `CLM-8960` shares member, hospital and date of service with a
+real prior claim (`CLM-8726`) but differs on line items — a three-fact match
+flags it as a duplicate and wrongly refuses a legitimate claim.
+
+Running the negative case and its near-miss control is what turned
+"compare the obvious fields" into the four-fact requirement now shipped in
+`tools.check_duplicate`, and into one of D2(b)'s four poka-yoke moves
+(`docs/d2b_descriptor_rewrite.md`, Table 2b: "Partial duplicate lookup" →
+"Member, hospital, date and line items all required" — "a silently loosened
+duplicate comparison" made impossible). It is also the entire premise of D7
+Failure 2 (`scripts/failure2_interface.py`): weaken the match back to three
+facts and `CLM-8960` reproduces the exact wrong escalation `CLM-8933`'s note
+predicted. The negative case did not just get graded — running it is why
+the tool signature looks the way it does.
+
 ## The 10 cases added to reach the 50-case ceiling, by what they test
 
 All ten are `approve_in_principle`, built from `EXTRA_CLAIMS` alone, no new
