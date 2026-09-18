@@ -463,10 +463,14 @@ def main():
     if args.judgement_sheet:
         print_judgement_sheet(rows)
 
-    if args.json_out:
-        with open(args.json_out, "w", encoding="utf-8") as fh:
-            json.dump(rows, fh, indent=2, ensure_ascii=False)
-        print("\nper-run rows written to {}".format(args.json_out))
+    # Always write a results file, like the scaffold's run_eval.py does
+    # unconditionally - --json overrides where; with no flag it lands in
+    # results/, the same place every other committed *.json result lives.
+    json_out = args.json_out or os.path.join(config.REPO_ROOT, "results", "results.json")
+    os.makedirs(os.path.dirname(json_out), exist_ok=True)
+    with open(json_out, "w", encoding="utf-8") as fh:
+        json.dump(rows, fh, indent=2, ensure_ascii=False)
+    print("\nper-run rows written to {}".format(json_out))
 
     print("decision letters appended to {}".format(config.DECISIONS_PATH))
     return 0 if passed == total else 1
