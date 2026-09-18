@@ -151,7 +151,9 @@ results, entirely offline — see "What the gated action does" below.
 The default backend is scripted. No API key, no network, no cost.
 `python3 harness.py` and `python3 run_eval.py` are the same command —
 `run_eval.py` is a one-line alias kept at the root in case that name is
-what you go looking for first; every flag below works with either.
+what you go looking for first; every flag below works with either. Every
+run also writes its per-row results to `results/results.json` by default
+(no flag needed) — pass `--json <path>` to write somewhere else instead.
 
 ```bash
 python3 harness.py                             # the whole evaluation set
