@@ -3,7 +3,8 @@
 **Course:** PE6201 Emerging AI Technologies  
 **Programme:** MSc Enterprise Artificial Intelligence, Nanyang Technological University  
 **Assessment:** A2 — Applied AI System  
-**Problem:** A — Health-Insurance Claim First Response
+**Problem:** A — Health-Insurance Claim First Response  
+**Recorded demonstration:** https://www.youtube.com/watch?v=BoABxRL6Eu0
 
 ## Overview
 
